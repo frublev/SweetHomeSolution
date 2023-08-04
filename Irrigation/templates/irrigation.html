@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>{{ title }}</h3>
+<table class="table table-borderless">
+  <tbody>
+    <tr>
+      <td>
+          <p>Value: 30l</p>
+          <p>Humidity: 50 ml</p>
+          <p>Time from last finish: 17:22</p>
+      </td>
+      <td><button onclick="postData('http://192.168.0.103:5000/irrigation', { valve: 1 })" id="valve1" class="{{ button }}">{{ valve_status }}</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Pressure</td>
+      <td>960 mm</td>
+    </tr>
+    <tr>
+      <td>Humidity</td>
+      <td>60%</td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+  const postData = async (url = '', data = {}) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    let inner_text = await response.json();
+    button_class(inner_text.button_class);
+    inner(inner_text.button_status);
+  return;
+  }
+
+  function button_class(button) {
+    document.getElementById("valve1").className = button;
+  }
+
+  function inner(text) {
+    document.getElementById("valve1").innerText = text;
+  }
+</script>
+
+{% endblock %}
