@@ -53,7 +53,7 @@ def irrigation():
     else:
         button = []
         valve_status = []
-        for i in range(7):
+        for i in range(3):
             if response[i] == 'f':
                 print(i)
                 valve_status.append('off')
