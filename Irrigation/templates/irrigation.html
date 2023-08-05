@@ -6,21 +6,34 @@
 <table class="table table-borderless">
   <tbody>
     <tr>
+      <td><p>1</p></td>
       <td>
-          <p>Value: 30l</p>
+          <p>Value: 30 l</p>
           <p>Humidity: 50 ml</p>
           <p>Time from last finish: 17:22</p>
       </td>
-      <td><button onclick="postData('http://192.168.0.103:5000/irrigation', { valve: 1 })" id="valve1" class="{{ button }}">{{ valve_status }}</button>
+      <td><button onclick="postData('http://192.168.0.103:5000/irrigation', { valve: 1 })" id="valve1" class="{{ button1 }}">{{ valve_status1 }}</button>
       </td>
     </tr>
     <tr>
-      <td>Pressure</td>
-      <td>960 mm</td>
+      <td><p>2</p></td>
+      <td>
+          <p>Value: 30 l</p>
+          <p>Humidity: 50 ml</p>
+          <p>Time from last finish: 17:22</p>
+      </td>
+      <td><button onclick="postData('http://192.168.0.103:5000/irrigation', { valve: 2 })" id="valve2" class="{{ button2 }}">{{ valve_status2 }}</button>
+      </td>
     </tr>
     <tr>
-      <td>Humidity</td>
-      <td>60%</td>
+      <td><p>3</p></td>
+      <td>
+          <p>Value: 30 l</p>
+          <p>Humidity: 50 ml</p>
+          <p>Time from last finish: 17:22</p>
+      </td>
+      <td><button onclick="postData('http://192.168.0.103:5000/irrigation', { valve: 3 })" id="valve3" class="{{ button2 }}">{{ valve_status3 }}</button>
+      </td>
     </tr>
   </tbody>
 </table>
@@ -32,19 +45,24 @@
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
-    let inner_text = await response.json();
-    button_class(inner_text.button_class);
-    inner(inner_text.button_status);
+    let valve_status = await response.json();
+    button_class_text(valve_status.fn);
   return;
   }
 
-  function button_class(button) {
-    document.getElementById("valve1").className = button;
+  function button_class_text(text) {
+    for (let i = 1; i < 4; i++) {
+      let valve = "valve" + i
+      if (text[i-1] == "f") {
+        document.getElementById(valve).className = 'btn btn-success';
+        document.getElementById(valve).innerText = 'off';
+      } else {
+        document.getElementById(valve).className = 'btn btn-danger';
+        document.getElementById(valve).innerText = 'on';
+      }
+    }
   }
 
-  function inner(text) {
-    document.getElementById("valve1").innerText = text;
-  }
 </script>
 
 {% endblock %}

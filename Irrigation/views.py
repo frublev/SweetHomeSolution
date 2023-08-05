@@ -36,43 +36,40 @@ def irrigation():
     response = get(url_ard)
     response = response.text
     print(response)
-    valve_status = response.find('turned off')
-    print(valve_status)
 
     if request.method == 'POST':
         request_data = request.get_json()
         valve = int(request_data['valve'])
-        if valve_status > 1:
-            response = get(url_ard + 'digital_pin=7&pin_high')
+        pin = 7 - valve + 1
+        print(pin)
+        if response[valve-1] == 'f':
+            response = get(url_ard + f'digital_pin={pin}&pin_high')
         else:
-            response = get(url_ard + 'digital_pin=7&pin_low')
+            response = get(url_ard + f'digital_pin={pin}&pin_low')
         response = response.text
-        print(response)
-        valve_status = response.find('turned off')
-        if valve_status > -1:
-            js_json = {
-                'button_status': 'off',
-                'button_class': 'btn btn-success'
-            }
-        else:
-            js_json = {
-                'button_status': 'on',
-                'button_class': 'btn btn-danger'
-            }
+        js_json = {'fn': response}
         return jsonify(js_json)
 
     else:
-        if valve_status > -1:
-            button_status = 'off'
-            button = 'btn btn-success'
-        else:
-            button_status = 'on'
-            button = 'btn btn-danger'
-        print(button_status)
+        button = []
+        valve_status = []
+        for i in range(7):
+            if response[i] == 'f':
+                print(i)
+                valve_status.append('off')
+                button.append('btn btn-success')
+            else:
+                valve_status.append('on')
+                button.append('btn btn-danger')
         return render_template(
             'irrigation.html',
             title='Irrigation System',
             year=datetime.now().year,
-            button=button,
-            valve_status=button_status
+            button1=button[0],
+            valve_status1=valve_status[0],
+            button2=button[1],
+            valve_status2=valve_status[1],
+            button3=button[2],
+            valve_status3=valve_status[2],
+
         )
