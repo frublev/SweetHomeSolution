@@ -2,7 +2,59 @@
 
 {% block content %}
 
-<h3>{{ title }}</h3>
+<h5 class="display-5">{{ title }}</h5>
+
+<div class="container text-center">
+  <div class="row">
+    <div class="col">
+      <table class="table table-borderless">
+        <tbody>
+          <tr>
+            <td>Last finish</td>
+            <td>5 aug 17:22</td>
+          <tr>
+            <td>Watering volume</td>
+            <td>~ 250 l</td>
+          </tr>
+          <tr>
+            <td>Precipitation</td>
+            <td>10 mm</td>
+          </tr>
+          <tr>
+            <td>Total watering</td>
+            <td>~ 50 mm</td>
+          </tr>
+          <tr>
+            <td>Soil moisture</td>
+            <td>20 %</td>
+          <tr>
+            <td>Next start</td>
+            <td>6 aug 17:15</td>
+          </tr>
+          <tr>
+            <td>Set duration</td>
+            <td>05:37</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col">
+      2 of 2
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      1 of 3
+    </div>
+    <div class="col">
+      2 of 3
+    </div>
+    <div class="col">
+      3 of 3
+    </div>
+  </div>
+</div>
+
 <table class="table table-borderless">
   <tbody>
     <tr>
@@ -13,26 +65,6 @@
           <p>Time from last finish: 17:22</p>
       </td>
       <td><button onclick="postData('http://192.168.0.104:5000/irrigation', { valve: 1 })" id="valve1" class="{{ button1 }}">{{ valve_status1 }}</button>
-      </td>
-    </tr>
-    <tr>
-      <td><p>2</p></td>
-      <td>
-          <p>Value: 30 l</p>
-          <p>Humidity: 50 ml</p>
-          <p>Time from last finish: 17:22</p>
-      </td>
-      <td><button onclick="postData('http://192.168.0.104:5000/irrigation', { valve: 2 })" id="valve2" class="{{ button2 }}">{{ valve_status2 }}</button>
-      </td>
-    </tr>
-    <tr>
-      <td><p>3</p></td>
-      <td>
-          <p>Value: 30 l</p>
-          <p>Humidity: 50 ml</p>
-          <p>Time from last finish: 17:22</p>
-      </td>
-      <td><button onclick="postData('http://192.168.0.104:5000/irrigation', { valve: 3 })" id="valve3" class="{{ button2 }}">{{ valve_status3 }}</button>
       </td>
     </tr>
   </tbody>

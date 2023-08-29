@@ -8,6 +8,11 @@
     <link href="/static/index.css" rel="stylesheet" type="text/css">
   </head>
   <body>
+    <div class="d-flex flex-row-reverse">
+      <div class="p-2">
+        <a class="fw-light" id="user_name" href="/login">Log In</a>
+      </div>
+    </div>
     <nav class="navbar navbar-expand-lg" style="background-color: #6B8E23;">
         <div class="container-fluid">
           <a class="navbar-brand" style="color: #FFFFF0;" href="/monitor">CalmCat</a>
@@ -17,13 +22,13 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <div class="navbar-nav">
                 <a class="nav-link" href="/monitor">Monitor</a>
-                <a class="nav-link" href="/irrigation">Irrigation</a>
+                <a class="nav-link" href="/irrigation/1">Irrigation</a>
+                <a class="nav-link" href="/irrigation_old">Irrigation(old)</a>
                 <a class="nav-link" href="/security">Security</a>
-`              </div>
+              </div>
             </div>
         </div>
     </nav>
-
 
     <div class="container body-content">
         {% block content %}{% endblock %}
@@ -32,7 +37,26 @@
             <p>&copy; {{ year }} - CalmCat Sweet Home Solution</p>
         </footer>
     </div>
+    <script>
+      async function check_token() {
+        let response = await fetch('/check_token');
+        let token_status = await response.json();
+        let user = token_status.message;
+        if (user == 'auth error') {
+          alert(user);
+          window.location.href = '/login/';
+          inner_text('Log In');
+        } else {
+          inner_text(user);
+        }
+      }
 
+      check_token().then(inner_text(result));
+
+      function inner_text(text) {
+        document.getElementById('user_name').innerText = text;
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
   </body>
 </html>
