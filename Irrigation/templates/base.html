@@ -42,19 +42,19 @@
         let response = await fetch('/check_token');
         let token_status = await response.json();
         let user = token_status.message;
-        if (user == 'auth error') {
-          alert(user);
-          window.location.href = '/login/';
-          inner_text('Log In');
+        if (user == 'invalid token') {
+          inner_text('Log In', '/login/');
         } else {
-          inner_text(user);
+          let user_id = "/user/" + token_status.user_id + "/";
+          inner_text(user, user_id);
         }
       }
 
       check_token().then(inner_text(result));
 
-      function inner_text(text) {
+      function inner_text(text, href) {
         document.getElementById('user_name').innerText = text;
+        document.getElementById('user_name').href = href;
       }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>

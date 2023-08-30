@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<table class="table table-borderless">
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>{{user_name}}</td>
+    </tr>
+    <tr>
+      <td>E-mail</td>
+      <td>{{email}}</td>
+    </tr>
+    <tr>
+      <td>Phone</td>
+      <td>{{phone_num}}</td>
+    </tr>
+  </tbody>
+</table>
+<a class="fw-light" id="user_name" href="/logout">Log Out</a>
+{% endblock %}

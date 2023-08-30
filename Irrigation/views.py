@@ -4,7 +4,7 @@ Routes and views for the flask application.
 
 from datetime import datetime
 
-from flask import render_template, request, jsonify, make_response
+from flask import render_template, request, jsonify, make_response, redirect
 from flask.views import MethodView
 from flask_bcrypt import Bcrypt
 
@@ -126,15 +126,15 @@ def error_handle(error):
 
 def check_token(session):
     token = (session.query(Token).filter(Token.id == request.cookies.get('token')).first())
-    if token is None:
+    print(token.status)
+    if token is None or token.status == False:
         raise HTTPError(403, 'invalid token')
     return token
 
 
 class Login(MethodView):
     def get(self):
-        context = {}
-        response = make_response(render_template('login.html'), context)
+        response = make_response(render_template('login.html'))
         return response
 
     def post(self):
@@ -165,6 +165,18 @@ class Login(MethodView):
                 return response
 
 
+@app.route('/logout')
+def logout():
+    with Session() as session:
+        token = check_token(session)
+        if token:
+            session.query(Token).filter(Token.id == token.id).update({'status': False})
+            session.commit()
+            print(token.id)
+            print(token.status)
+        return redirect('/', code=302)
+
+
 @app.route('/')
 @app.route('/monitor')
 def monitor():
@@ -181,7 +193,7 @@ def check_token_base():
     with Session() as session:
         token = check_token(session)
         if token:
-            return jsonify({'message': token.user.user_name})
+            return jsonify({'message': token.user.user_name, 'user_id': token.user.id})
         else:
             message = {'message': 'auth error'}
             response = make_response(message, 403)
@@ -265,7 +277,13 @@ class UserView(MethodView):
             token = check_token(session)
             if token.user.id != user_id:
                 raise HTTPError(403, "auth error")
-            return jsonify(token.user.to_dict())
+            else:
+                response = make_response(render_template('profile.html',
+                                                         user_name=token.user.user_name,
+                                                         email=token.user.email,
+                                                         phone_num=token.user.phone_num
+                                                         ))
+            return response
 
     def post(self):
         try:
@@ -323,3 +341,4 @@ app.add_url_rule('/create_user/', view_func=UserView.as_view('create_user'), met
 app.add_url_rule('/login/', view_func=Login.as_view('show_login_form'), methods=['GET'])
 app.add_url_rule('/login/', view_func=Login.as_view('login'), methods=['POST'])
 app.add_url_rule('/welcome/', view_func=WelcomeView.as_view('show_welcome'), methods=['GET'])
+app.add_url_rule('/user/<int:user_id>/', view_func=UserView.as_view('get_user'), methods=['GET'])
