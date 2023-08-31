@@ -1,7 +1,3 @@
-"""
-Routes and views for the flask application.
-"""
-
 from datetime import datetime
 
 from flask import render_template, request, jsonify, make_response, redirect
@@ -69,9 +65,9 @@ class Token(Base):
     __tablename__ = "tokens"
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True)
     creation_time = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey('users.id'))
     status = Column(Boolean, nullable=True)
-    user = relationship(UserModel, lazy="joined")
+    user = relationship(UserModel, lazy='joined')
 
 
 class ValveModel(Base):
@@ -81,8 +77,8 @@ class ValveModel(Base):
     description = Column(String(1000), nullable=False)
     jet = Column(Integer, nullable=False)
     creation_time = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship(UserModel, lazy="joined")
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(UserModel, lazy='joined')
 
     def to_dict(self):
         return {
@@ -335,10 +331,27 @@ class ValveView(MethodView):
 
         )
 
+    def post(self):
+        valve_data = request.json
+        with Session() as session:
+            new_valve = UserModel(**valve_data)
+            print(new_valve)
+            session.add(new_valve)
+            try:
+                session.commit()
+                return jsonify(new_valve.to_dict())
+            except IntegrityError:
+                head = valve_data['head']
+                session.rollback()
+                return jsonify({'error': f'Username {head} already exists'})
+
 
 app.add_url_rule('/irrigation/<int:valve_id>/', view_func=ValveView.as_view('view_valve'), methods=['GET'])
+app.add_url_rule('/create_valve/', view_func=ValveView.as_view('create_valve'), methods=['POST'])
 app.add_url_rule('/create_user/', view_func=UserView.as_view('create_user'), methods=['POST'])
 app.add_url_rule('/login/', view_func=Login.as_view('show_login_form'), methods=['GET'])
 app.add_url_rule('/login/', view_func=Login.as_view('login'), methods=['POST'])
 app.add_url_rule('/welcome/', view_func=WelcomeView.as_view('show_welcome'), methods=['GET'])
 app.add_url_rule('/user/<int:user_id>/', view_func=UserView.as_view('get_user'), methods=['GET'])
+
+# 13:30 30/08
