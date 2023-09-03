@@ -3,14 +3,18 @@
   color: #FFFFF0 !important;
 }
 
-.nav-link {
-  color: #FFFFF0 !important;
+.nav-link:hover {
+  color: #FFA07A !important;
 }
 
-.nav-link:hover {
+.nav-link active {
   color: #777 !important;
 }
 
 .nav-link {
   float: right !important;
+}
+
+.h5 {
+  color: #777 !important;
 }

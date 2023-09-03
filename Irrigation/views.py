@@ -7,26 +7,16 @@ from flask_bcrypt import Bcrypt
 from Irrigation import app
 from requests import get
 
-from sqlalchemy import (
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    create_engine,
-    func,
-    Boolean
-)
-from sqlalchemy_utils import EmailType
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
-import uuid
+from sqlalchemy.orm import sessionmaker
 import pydantic
 import os
 
 from dotenv import load_dotenv
+
+from .arduinos import request_pin_status
+from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 print(dotenv_path)
@@ -36,60 +26,7 @@ if os.path.exists(dotenv_path):
 bcrypt = Bcrypt(app)
 PG_DSN = os.getenv('PG_DSN')
 engine = create_engine(PG_DSN)
-Base = declarative_base()
 Session = sessionmaker(bind=engine)
-
-
-class UserModel(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
-    user_name = Column(String(100), nullable=False, unique=True)
-    password = Column(String(200), nullable=False)
-    registration_time = Column(DateTime, server_default=func.now())
-    email = Column(EmailType, nullable=False, unique=True)
-    phone_num = Column(String(20), nullable=False, unique=True)
-
-    def to_dict(self):
-        return {
-            'user_name': self.user_name,
-            'email': self.email,
-            'registration_time': int(self.registration_time.timestamp()),
-            'id': self.id,
-        }
-
-    def check_password(self, password: str):
-        return bcrypt.check_password_hash(self.password.encode(), password.encode())
-
-
-class Token(Base):
-    __tablename__ = "tokens"
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True)
-    creation_time = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey('users.id'))
-    status = Column(Boolean, nullable=True)
-    user = relationship(UserModel, lazy='joined')
-
-
-class ValveModel(Base):
-    __tablename__ = "valves"
-    id = Column(Integer, primary_key=True)
-    head = Column(String(200), nullable=False)
-    description = Column(String(1000), nullable=False)
-    jet = Column(Integer, nullable=False)
-    creation_time = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey('users.id'))
-    user = relationship(UserModel, lazy='joined')
-
-    def to_dict(self):
-        return {
-            'head': self.head,
-            'description': self.description,
-            'jet': self.jet,
-            'creation_time': int(self.creation_time.timestamp()),
-            'id': self.id,
-            'user_id': self.user_id
-        }
-
 
 Base.metadata.create_all(engine)
 
@@ -122,7 +59,6 @@ def error_handle(error):
 
 def check_token(session):
     token = (session.query(Token).filter(Token.id == request.cookies.get('token')).first())
-    print(token.status)
     if token is None or token.status == False:
         raise HTTPError(403, 'invalid token')
     return token
@@ -141,7 +77,7 @@ class Login(MethodView):
                     .filter(UserModel.user_name == login_data['login'])
                     .first()
             )
-            if user is None or not user.check_password(login_data['password']):
+            if user is None or not user.check_password(login_data['password'], bcrypt):
                 message = {'message': 'incorrect user or password'}
                 response = make_response(message, 401)
                 return response
@@ -301,57 +237,134 @@ class UserView(MethodView):
                 return jsonify({'error': f'Username {user_name} already exists'})
 
 
+class AreaView(MethodView):
+    def get(self, area_id: int):
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                area = session.query(AreaModel).filter(AreaModel.id == area_id).first()
+                valves_ = session.query(ValveModel).filter(ValveModel.area_id == area_id).all()
+                valves_count = len(valves_)
+                sprinklers = session.query(SprinklerModel).filter(SprinklerModel.area_id == area_id).all()
+                sprinklers = len(sprinklers)
+                description = {
+                    'Area': area.description,
+                    'Square': area.square,
+                    'Valves quantity': valves_count,
+                    'Sprinklers quantity': sprinklers
+                }
+
+                url_ard = 'http://192.168.0.177/'
+                relays_status = request_pin_status(url_ard)
+                valves = []
+                for valve_ in valves_:
+                    valve = valve_.to_dict_short()
+                    valve['relay'] = valve_.relay
+                    if relays_status[valve_.relay - 1] == 'n':
+                        valve['button'] = ['On', 'btn btn-danger']
+                    elif relays_status[valve_.relay - 1] == 'f':
+                        valve['button'] = ['Off', 'btn btn-success']
+                    else:
+                        valve['button'] = ['Unknown', 'btn btn-secondary disabled']
+                    valves.append(valve)
+
+                response = make_response(render_template('irrigation_area.html',
+                                                         head=area.head,
+                                                         description=description,
+                                                         valves=valves,
+                                                         year=datetime.now().year,
+                                                         ))
+                return response
+
+        # area = f'Irrigation area {valve_id}'
+        # url_ard = 'http://192.168.0.177/'
+        # response = get(url_ard)
+        # response = response.text
+        # print(response)
+        # button = []
+        # valve_status = []
+        # for i in range(3):
+        #     if response[i] == 'f':
+        #         print(i)
+        #         valve_status.append('off')
+        #         button.append('btn btn-success')
+        #     else:
+        #         valve_status.append('on')
+        #         button.append('btn btn-danger')
+        # return render_template(
+        #     'irrigation_area.html',
+        #     title=area,
+        #     year=datetime.now().year,
+        #     button1=button[0],
+        #     valve_status1=valve_status[0],
+        #     button2=button[1],
+        #     valve_status2=valve_status[1],
+        #     button3=button[2],
+        #     valve_status3=valve_status[2],
+        # )
+
+    def post(self):
+        area_data = request.json
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                new_area = AreaModel(**area_data)
+                new_area.user_id = token.user.id
+                session.add(new_area)
+                try:
+                    session.commit()
+                    return jsonify(new_area.to_dict())
+                except IntegrityError:
+                    head = area_data['head']
+                    session.rollback()
+                    return jsonify({'error': f'Area {head} already exists'})
+
+    def patch(self, area_id: int):
+        area_data = request.json
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                session.query(AreaModel).filter(AreaModel.id == area_id).update(area_data)
+                session.commit()
+                upd_area = session.query(AreaModel).get(area_id)
+                return jsonify(upd_area.to_dict())
+
+
 class ValveView(MethodView):
-    def get(self, valve_id: int):
-        area = f'Irrigation area {valve_id}'
-        url_ard = 'http://192.168.0.177/'
-        response = get(url_ard)
-        response = response.text
-        print(response)
-        button = []
-        valve_status = []
-        for i in range(3):
-            if response[i] == 'f':
-                print(i)
-                valve_status.append('off')
-                button.append('btn btn-success')
-            else:
-                valve_status.append('on')
-                button.append('btn btn-danger')
-        return render_template(
-            'irrigation_valve.html',
-            title=area,
-            year=datetime.now().year,
-            button1=button[0],
-            valve_status1=valve_status[0],
-            button2=button[1],
-            valve_status2=valve_status[1],
-            button3=button[2],
-            valve_status3=valve_status[2],
-
-        )
-
     def post(self):
         valve_data = request.json
         with Session() as session:
-            new_valve = UserModel(**valve_data)
-            print(new_valve)
-            session.add(new_valve)
-            try:
+            token = check_token(session)
+            if token:
+                new_valve = ValveModel(**valve_data)
+                new_valve.user_id = token.user.id
+                session.add(new_valve)
                 session.commit()
-                return jsonify(new_valve.to_dict())
-            except IntegrityError:
-                head = valve_data['head']
-                session.rollback()
-                return jsonify({'error': f'Username {head} already exists'})
+                return jsonify(new_valve.to_dict_full())
 
 
-app.add_url_rule('/irrigation/<int:valve_id>/', view_func=ValveView.as_view('view_valve'), methods=['GET'])
-app.add_url_rule('/create_valve/', view_func=ValveView.as_view('create_valve'), methods=['POST'])
+class SprinklerView(MethodView):
+    def post(self):
+        sprinkler_data = request.json
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                new_sprinkler = SprinklerModel(**sprinkler_data)
+                new_sprinkler.user_id = token.user.id
+                session.add(new_sprinkler)
+                session.commit()
+                return jsonify(new_sprinkler.to_dict())
+
+
+app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])
+app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])
+app.add_url_rule('/irrigation/areas/', view_func=AreaView.as_view('create_area'), methods=['POST'])
+app.add_url_rule('/irrigation/valves/', view_func=ValveView.as_view('create_valve'), methods=['POST'])
+app.add_url_rule('/irrigation/sprinklers/', view_func=SprinklerView.as_view('create_sprinkler'), methods=['POST'])
 app.add_url_rule('/create_user/', view_func=UserView.as_view('create_user'), methods=['POST'])
 app.add_url_rule('/login/', view_func=Login.as_view('show_login_form'), methods=['GET'])
 app.add_url_rule('/login/', view_func=Login.as_view('login'), methods=['POST'])
 app.add_url_rule('/welcome/', view_func=WelcomeView.as_view('show_welcome'), methods=['GET'])
 app.add_url_rule('/user/<int:user_id>/', view_func=UserView.as_view('get_user'), methods=['GET'])
 
-# 13:30 30/08
+# 13:30 30/08 два куска мыла, яйца, пакеты для мусора

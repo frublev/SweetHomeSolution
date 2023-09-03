@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h6 class="display-6">{{ head }}</h6>
+
+<nav>
+  <div class="nav nav-tabs" id="nav-tab" role="tablist">
+    <button class="nav-link active" id="nav-watering-tab" data-bs-toggle="tab" data-bs-target="#nav-watering" type="button" role="tab" aria-controls="nav-watering" aria-selected="true">Watering</button>
+    <button class="nav-link" id="nav-description-tab" data-bs-toggle="tab" data-bs-target="#nav-description" type="button" role="tab" aria-controls="nav-description" aria-selected="false">Description</button>
+    <button class="nav-link" id="nav-valves-tab" data-bs-toggle="tab" data-bs-target="#nav-valves" type="button" role="tab" aria-controls="nav-valves" aria-selected="false">Valves</button>
+  </div>
+</nav>
+<div class="tab-content" id="nav-tabContent">
+  <div class="tab-pane fade show active" id="nav-watering" role="tabpanel" aria-labelledby="nav-watering-tab" tabindex="0">
+    <table class="table table-borderless">
+      <tbody>
+        <tr>
+          <td>Last finish:</td>
+          <td>5 aug 17:22</td>
+        </tr>
+        <tr>
+          <td>Watering volume:</td>
+          <td>250 l</td>
+        </tr>
+        <tr>
+          <td>Precipitation:</td>
+          <td>10 mm</td>
+        </tr>
+        <tr>
+          <td>Total watering:</td>
+          <td>50 mm</td>
+        </tr>
+        <tr>
+          <td>Soil moisture:</td>
+          <td>20 %</td>
+        </tr>
+        <tr>
+          <td>Next start:</td>
+          <td>6 aug 17:15</td>
+        </tr>
+        <tr>
+          <td>Set duration:</td>
+          <td>05:37</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tab-pane fade" id="nav-description" role="tabpanel" aria-labelledby="nav-description-tab" tabindex="0">
+    <table class="table table-borderless">
+      <tbody>
+      {% for item in description.items() %}
+        <tr>
+          <td>{{ item[0] }}</td>
+          <td>{{ item[1] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tab-pane fade" id="nav-valves" role="tabpanel" aria-labelledby="nav-valves-tab" tabindex="0">
+    <table class="table table-borderless">
+      <thead>
+        <tr>
+          <th scope="col">Head</th>
+          <th scope="col">Model</th>
+          <th scope="col">Speed, l/min</th>
+          <th scope="col">On/Off</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for unit in valves %}
+        <tr>
+          <td>{{ unit['head'] }}</td>
+          <td>{{ unit['model'] }}</td>
+          <td>{{ unit['jet'] }}</td>
+          <td>
+            <button onclick="postData('/irrigation_old', { unit['relay'] })" class="{{ unit['button'][1] }}">{{ unit['button'][0] }}</button>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const postData = async (url = '', data = {}) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    let valve_status = await response.json();
+    button_class_text(valve_status.fn);
+  return;
+  }
+
+  function button_class_text(text) {
+    for (let i = 1; i < 4; i++) {
+      let valve = "valve" + i
+      if (text[i-1] == "f") {
+        document.getElementById(valve).className = 'btn btn-success';
+        document.getElementById(valve).innerText = 'off';
+      } else {
+        document.getElementById(valve).className = 'btn btn-danger';
+        document.getElementById(valve).innerText = 'on';
+      }
+    }
+  }
+
+</script>
+
+{% endblock %}
