@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h6 class="display-6">{{ head }}</h6>
+<h6 class="display-6" id="head">{{ head }}</h6>
 
 <nav>
   <div class="nav nav-tabs" id="nav-tab" role="tablist">
@@ -65,7 +65,7 @@
           <th scope="col">Head</th>
           <th scope="col">Model</th>
           <th scope="col">Speed, l/min</th>
-          <th scope="col">On/Off</th>
+          <th scope="col">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -73,17 +73,38 @@
         <tr>
           <td>{{ unit['head'] }}</td>
           <td>{{ unit['model'] }}</td>
-          <td>{{ unit['jet'] }}</td>
+          <td id="jet{{ unit['relay'] }}">{{ unit['jet'] }}</td>
           <td>
-            <button onclick="postData('/irrigation_old', { unit['relay'] })" class="{{ unit['button'][1] }}">{{ unit['button'][0] }}</button>
+            <button id="relay{{ unit['relay'] }}" onclick="postData('/valve_manual', { relay: {{ unit['relay'] }}})" class="{{ unit['button'][1] }}" style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;">{{ unit['button'][0] }}</button>
         </tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+<div id="valves_numbers" style="display: none;">{{ valves_str }}</div>
+<div id="relay_status" style="display: none;">{{ rs }}</div>
 
 <script>
+  let rs = document.getElementById("relay_status").innerHTML;
+  rs = rs.slice(0, 4);
+  watering(rs);
+
+
+  async function watering(r_status) {
+    if (r_status != "ffff") {
+      start = new Date;
+      inter = setInterval(async function() {
+        rs1 = await getStatus("/relay_status");
+        rs1 = rs1.slice(0, 4);
+        watering_time = new Date - start;
+        button_class_text(rs1, watering_time);
+        if (rs1 == "ffff") clearInterval(inter);
+      }, 3000)
+    }
+  }
+
+
   const postData = async (url = '', data = {}) => {
     const response = await fetch(url, {
       method: 'POST',
@@ -91,19 +112,40 @@
       body: JSON.stringify(data)
     });
     let valve_status = await response.json();
-    button_class_text(valve_status.fn);
+    button_class_text(valve_status.fn, 0);
+    rs = valve_status.fn;
+    rs = rs.slice(0, 4);
+    watering(rs);
   return;
   }
 
-  function button_class_text(text) {
-    for (let i = 1; i < 4; i++) {
-      let valve = "valve" + i
-      if (text[i-1] == "f") {
-        document.getElementById(valve).className = 'btn btn-success';
-        document.getElementById(valve).innerText = 'off';
+
+  async function getStatus(url1) {
+    let response1 = await fetch(url1);
+    let valve_status1 = await response1.json();
+    return valve_status1.fn;
+  }
+
+
+  function button_class_text(text, w_time) {
+    let valves_numbers = document.getElementById("valves_numbers").innerHTML;
+    let vn_list = valves_numbers.split(';');
+    vn_list.pop();
+    for (let vn of vn_list) {
+      let valve_id = "relay" + vn
+      if (text[vn-1] == "f") {
+        document.getElementById(valve_id).className = 'btn btn-success';
+        document.getElementById(valve_id).innerText = 'Off';
+      } else if (text[vn-1] == "n") {
+        document.getElementById(valve_id).className = 'btn btn-danger';
+        let jet_id = "jet" + vn;
+        let watering_jet = document.getElementById(jet_id).innerHTML;
+        let litres = w_time / 60000 * watering_jet;
+        litres = litres.toFixed(1)
+        document.getElementById(valve_id).innerText = litres;
       } else {
-        document.getElementById(valve).className = 'btn btn-danger';
-        document.getElementById(valve).innerText = 'on';
+        document.getElementById(valve_id).className = 'btn btn-secondary disabled';
+        document.getElementById(valve_id).innerText = 'Unknown';
       }
     }
   }

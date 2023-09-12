@@ -15,7 +15,7 @@ import os
 
 from dotenv import load_dotenv
 
-from .arduinos import request_pin_status
+from .arduinos import request_pin_status, url_ard
 from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -161,7 +161,6 @@ def contact():
 
 @app.route('/irrigation_old', methods=['GET', 'POST'])
 def irrigation_old():
-    url_ard = 'http://192.168.0.177/'
     response = get(url_ard)
     response = response.text
     print(response)
@@ -254,9 +253,10 @@ class AreaView(MethodView):
                     'Sprinklers quantity': sprinklers
                 }
 
-                url_ard = 'http://192.168.0.177/'
                 relays_status = request_pin_status(url_ard)
+                print(relays_status)
                 valves = []
+                valves_str = ''
                 for valve_ in valves_:
                     valve = valve_.to_dict_short()
                     valve['relay'] = valve_.relay
@@ -267,41 +267,17 @@ class AreaView(MethodView):
                     else:
                         valve['button'] = ['Unknown', 'btn btn-secondary disabled']
                     valves.append(valve)
+                    valves_str += str(valve['relay']) + ';'
 
                 response = make_response(render_template('irrigation_area.html',
                                                          head=area.head,
                                                          description=description,
                                                          valves=valves,
+                                                         valves_str=valves_str,
+                                                         rs=relays_status,
                                                          year=datetime.now().year,
                                                          ))
                 return response
-
-        # area = f'Irrigation area {valve_id}'
-        # url_ard = 'http://192.168.0.177/'
-        # response = get(url_ard)
-        # response = response.text
-        # print(response)
-        # button = []
-        # valve_status = []
-        # for i in range(3):
-        #     if response[i] == 'f':
-        #         print(i)
-        #         valve_status.append('off')
-        #         button.append('btn btn-success')
-        #     else:
-        #         valve_status.append('on')
-        #         button.append('btn btn-danger')
-        # return render_template(
-        #     'irrigation_area.html',
-        #     title=area,
-        #     year=datetime.now().year,
-        #     button1=button[0],
-        #     valve_status1=valve_status[0],
-        #     button2=button[1],
-        #     valve_status2=valve_status[1],
-        #     button3=button[2],
-        #     valve_status3=valve_status[2],
-        # )
 
     def post(self):
         area_data = request.json
@@ -328,6 +304,31 @@ class AreaView(MethodView):
                 session.commit()
                 upd_area = session.query(AreaModel).get(area_id)
                 return jsonify(upd_area.to_dict())
+
+
+@app.route('/valve_manual', methods=['POST'])
+def valve_manual():
+    relays_status = request_pin_status(url_ard)
+    if relays_status == 'dddd':
+        js_json = {'fn': 'dddd'}
+    else:
+        request_data = request.get_json()
+        relay = int(request_data['relay'])
+        pin = 7 - relay + 1
+        if relays_status[relay - 1] == 'f':
+            response = get(url_ard + f'digital_pin={pin}&pin_high')
+        else:
+            response = get(url_ard + f'digital_pin={pin}&pin_low')
+        response = response.text
+        js_json = {'fn': response}
+    return jsonify(js_json)
+
+
+@app.route('/relay_status')
+def relay_status_check():
+    relays_status = request_pin_status(url_ard)
+    js_json = {'fn': relays_status}
+    return jsonify(js_json)
 
 
 class ValveView(MethodView):
