@@ -75,7 +75,10 @@
           <td>{{ unit['model'] }}</td>
           <td id="jet{{ unit['relay'] }}">{{ unit['jet'] }}</td>
           <td>
-            <button id="relay{{ unit['relay'] }}" onclick="postData('/valve_manual', { relay: {{ unit['relay'] }}})" class="{{ unit['button'][1] }}" style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;">{{ unit['button'][0] }}</button>
+            <button id="relay{{ unit['relay'] }}"
+                    onclick="postData('/valve_manual', { relay: {{ unit['relay'] }}})"
+                    class="{{ unit['button'][1] }}"
+                    style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;">{{ unit['button'][0] }}</button>
         </tr>
       {% endfor %}
       </tbody>

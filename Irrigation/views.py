@@ -16,7 +16,7 @@ import os
 from dotenv import load_dotenv
 
 from .arduinos import request_pin_status, url_ard
-from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel
+from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 print(dotenv_path)
@@ -313,15 +313,53 @@ def valve_manual():
         js_json = {'fn': 'dddd'}
     else:
         request_data = request.get_json()
-        relay = int(request_data['relay'])
-        pin = 7 - relay + 1
-        if relays_status[relay - 1] == 'f':
-            response = get(url_ard + f'digital_pin={pin}&pin_high')
-        else:
-            response = get(url_ard + f'digital_pin={pin}&pin_low')
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                relay = int(request_data['relay'])
+                pin = 7 - relay + 1
+                if relays_status[relay - 1] == 'f':
+                    response = get(url_ard + f'digital_pin={pin}&pin_high')
+                    # if response.status_code == 200:
+                    #     new_watering = WateringModel()
+                    #     new_watering.user_id = token.user.id
+                    #     valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
+                    #     new_watering.valve_id = valve.id
+                    #     new_watering.status = True
+                    #     session.add(new_watering)
+                    #     session.commit()
+                else:
+                    response = get(url_ard + f'digital_pin={pin}&pin_low')
+                    # if response.status_code == 200:
+                    #     watering_session = session.query(WateringModel).filter(
+                    #         WateringModel.relay == relay,
+                    #         WateringModel.status == True,
+                    #     ).first()
+                    #     new_watering = WateringModel()
+                    #     new_watering.user_id = token.user.id
+                    #     valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
+                    #     new_watering.valve_id = valve.id
+                    #     new_watering.status = True
+                    #     session.add(new_watering)
+                    #     session.commit()
         response = response.text
         js_json = {'fn': response}
     return jsonify(js_json)
+
+
+@app.route('/watering_stopped/<rs_status>')
+def watering_stopped(rs_status):
+    for index, value in enumerate(rs_status):
+        if value == 'n':
+            relay = index + 1
+            # with Session() as session:
+            #     watering_session = session.query(WateringModel).filter(
+                    #         WateringModel.relay == relay,
+                    #         WateringModel.status == True,
+                    #     ).first()
+
+    print(relay)
+    return rs_status
 
 
 @app.route('/relay_status')
