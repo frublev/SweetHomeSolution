@@ -86,29 +86,47 @@
   </div>
 </div>
 <div id="valves_numbers" style="display: none;">{{ valves_str }}</div>
+<div id="active_valve" style="display: none;">{{ active_valve }}</div>
 <div id="relay_status" style="display: none;">{{ rs }}</div>
+<div id="start_time" style="display: none;">{{ start_time }}</div>
 
 <script>
   let rs = document.getElementById("relay_status").innerHTML;
+  let start_time = document.getElementById("start_time").innerHTML;
+  let active_valve = document.getElementById("active_valve").innerHTML;
   rs = rs.slice(0, 4);
-  watering(rs);
+  let on_off = false;
+  if (rs != "ffff") {
+    watering(rs, active_valve);
+  }
 
 
-  async function watering(r_status) {
+  async function watering(r_status, rl) {
     if (r_status != "ffff") {
-      start = new Date;
-      inter = setInterval(async function() {
-        rs1 = await getStatus("/relay_status");
+      on_off = true;
+      if (start_time != 0) {
+        start = start_time;
+      } else {
+        start = new Date - 0;
+      }
+      alert(start);
+      let inter = setInterval(async function() {
+        let rs1 = await getStatus("/relay_status");
         rs1 = rs1.slice(0, 4);
         watering_time = new Date - start;
+        alert(watering_time);
         button_class_text(rs1, watering_time);
-        if (rs1 == "ffff") clearInterval(inter);
+        if (rs1[rl-1] == "f") {
+          on_off = false;
+          clearInterval(inter);
+        }
       }, 3000)
     }
   }
 
 
   const postData = async (url = '', data = {}) => {
+    relay = Object.values(data);
     const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -116,10 +134,18 @@
     });
     let valve_status = await response.json();
     button_class_text(valve_status.fn, 0);
-    rs = valve_status.fn;
-    rs = rs.slice(0, 4);
-    watering(rs);
+    let rs2 = valve_status.fn;
+    rs2 = rs2.slice(0, 4);
+    wait_off();
+    watering(rs2, relay);
   return;
+  }
+
+
+  async function wait_off() {
+    let off_wait = new Promise(function(resolve, reject) {
+      resolve(1);
+    });
   }
 
 

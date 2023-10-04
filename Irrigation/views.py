@@ -7,7 +7,7 @@ from flask_bcrypt import Bcrypt
 from Irrigation import app
 from requests import get
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 import pydantic
@@ -257,11 +257,18 @@ class AreaView(MethodView):
                 print(relays_status)
                 valves = []
                 valves_str = ''
+                start_time = 0
+                active_valve = None
                 for valve_ in valves_:
                     valve = valve_.to_dict_short()
                     valve['relay'] = valve_.relay
                     if relays_status[valve_.relay - 1] == 'n':
                         valve['button'] = ['On', 'btn btn-danger']
+                        active_valve = valve['relay']
+                        watering_session = session.query(WateringModel).filter(WateringModel.valve_id == valve_.id,
+                                                                               WateringModel.status == True).first()
+                        start_time = watering_session.creation_time
+                        start_time = start_time.timestamp()
                     elif relays_status[valve_.relay - 1] == 'f':
                         valve['button'] = ['Off', 'btn btn-success']
                     else:
@@ -274,7 +281,9 @@ class AreaView(MethodView):
                                                          description=description,
                                                          valves=valves,
                                                          valves_str=valves_str,
+                                                         active_valve=active_valve,
                                                          rs=relays_status,
+                                                         start_time=start_time,
                                                          year=datetime.now().year,
                                                          ))
                 return response
@@ -320,28 +329,16 @@ def valve_manual():
                 pin = 7 - relay + 1
                 if relays_status[relay - 1] == 'f':
                     response = get(url_ard + f'digital_pin={pin}&pin_high')
-                    # if response.status_code == 200:
-                    #     new_watering = WateringModel()
-                    #     new_watering.user_id = token.user.id
-                    #     valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
-                    #     new_watering.valve_id = valve.id
-                    #     new_watering.status = True
-                    #     session.add(new_watering)
-                    #     session.commit()
+                    if response.status_code == 200:
+                        new_watering = WateringModel()
+                        new_watering.user_id = token.user.id
+                        valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
+                        new_watering.valve_id = valve.id
+                        new_watering.status = True
+                        session.add(new_watering)
+                        session.commit()
                 else:
                     response = get(url_ard + f'digital_pin={pin}&pin_low')
-                    # if response.status_code == 200:
-                    #     watering_session = session.query(WateringModel).filter(
-                    #         WateringModel.relay == relay,
-                    #         WateringModel.status == True,
-                    #     ).first()
-                    #     new_watering = WateringModel()
-                    #     new_watering.user_id = token.user.id
-                    #     valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
-                    #     new_watering.valve_id = valve.id
-                    #     new_watering.status = True
-                    #     session.add(new_watering)
-                    #     session.commit()
         response = response.text
         js_json = {'fn': response}
     return jsonify(js_json)
@@ -349,15 +346,20 @@ def valve_manual():
 
 @app.route('/watering_stopped/<rs_status>')
 def watering_stopped(rs_status):
+    relay = 0
     for index, value in enumerate(rs_status):
         if value == 'n':
             relay = index + 1
-            # with Session() as session:
-            #     watering_session = session.query(WateringModel).filter(
-                    #         WateringModel.relay == relay,
-                    #         WateringModel.status == True,
-                    #     ).first()
-
+            with Session() as session:
+                valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
+                watering_session = session.query(WateringModel).filter(WateringModel.valve_id == valve.id,
+                                                                       WateringModel.status == True).all()
+                print(watering_session)
+                for w_s in watering_session:
+                    print(w_s.creation_time)
+                    w_s.stop_time = datetime.now()
+                    w_s.status = False
+                session.commit()
     print(relay)
     return rs_status
 
