@@ -268,7 +268,7 @@ class AreaView(MethodView):
                         watering_session = session.query(WateringModel).filter(WateringModel.valve_id == valve_.id,
                                                                                WateringModel.status == True).first()
                         start_time = watering_session.creation_time
-                        start_time = start_time.timestamp()
+                        start_time = start_time.timestamp() * 1000
                     elif relays_status[valve_.relay - 1] == 'f':
                         valve['button'] = ['Off', 'btn btn-success']
                     else:
@@ -354,13 +354,10 @@ def watering_stopped(rs_status):
                 valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
                 watering_session = session.query(WateringModel).filter(WateringModel.valve_id == valve.id,
                                                                        WateringModel.status == True).all()
-                print(watering_session)
                 for w_s in watering_session:
-                    print(w_s.creation_time)
                     w_s.stop_time = datetime.now()
                     w_s.status = False
                 session.commit()
-    print(relay)
     return rs_status
 
 

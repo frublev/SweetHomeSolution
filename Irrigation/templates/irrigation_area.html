@@ -107,14 +107,12 @@
       if (start_time != 0) {
         start = start_time;
       } else {
-        start = new Date - 0;
+        start = (new Date - 0);
       }
-      alert(start);
       let inter = setInterval(async function() {
         let rs1 = await getStatus("/relay_status");
         rs1 = rs1.slice(0, 4);
         watering_time = new Date - start;
-        alert(watering_time);
         button_class_text(rs1, watering_time);
         if (rs1[rl-1] == "f") {
           on_off = false;
