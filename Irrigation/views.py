@@ -1,4 +1,5 @@
 from datetime import datetime
+from threading import Timer
 
 from flask import render_template, request, jsonify, make_response, redirect
 from flask.views import MethodView
@@ -7,7 +8,7 @@ from flask_bcrypt import Bcrypt
 from Irrigation import app
 from requests import get
 
-from sqlalchemy import create_engine, and_
+from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 import pydantic
@@ -322,7 +323,7 @@ class AreaView(MethodView):
 
 
 @app.route('/valve_manual', methods=['POST'])
-def valve_manual():
+def valve_manual(timer='0010'):
     relays_status = request_pin_status(url_ard)
     if relays_status == 'dddd':
         js_json = {'fn': 'dddd'}
@@ -334,7 +335,7 @@ def valve_manual():
                 relay = int(request_data['relay'])
                 pin = 7 - relay + 1
                 if relays_status[relay - 1] == 'f':
-                    response = get(url_ard + f'digital_pin={pin}&pin_high')
+                    response = get(url_ard + f'digital_pin={pin}&timer={timer}&pin_high')
                     if response.status_code == 200:
                         new_watering = WateringModel()
                         new_watering.user_id = token.user.id
@@ -352,7 +353,6 @@ def valve_manual():
 
 @app.route('/watering_stopped/<rs_status>')
 def watering_stopped(rs_status):
-    relay = 0
     for index, value in enumerate(rs_status):
         if value == 'n':
             relay = index + 1
@@ -362,6 +362,7 @@ def watering_stopped(rs_status):
                                                                        WateringModel.status == True).all()
                 for w_s in watering_session:
                     w_s.stop_time = datetime.now()
+                    w_s.volume = (w_s.stop_time.timestamp() - w_s.creation_time.timestamp()) / 60 * valve.jet
                     w_s.status = False
                 session.commit()
     return rs_status
@@ -399,6 +400,14 @@ class SprinklerView(MethodView):
                 session.commit()
                 return jsonify(new_sprinkler.to_dict())
 
+
+def ppprint(word):
+    print(word)
+
+
+a = 'safdsd'
+t = Timer(3.0, ppprint, [a])
+t.start()
 
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])
