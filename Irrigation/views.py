@@ -259,16 +259,21 @@ class AreaView(MethodView):
                 valves_str = ''
                 start_time = 0
                 active_valve = None
+                active_class = ["nav-link active", "tab-pane fade show active", "nav-link", "tab-pane fade"]
                 for valve_ in valves_:
                     valve = valve_.to_dict_short()
                     valve['relay'] = valve_.relay
                     if relays_status[valve_.relay - 1] == 'n':
                         valve['button'] = ['On', 'btn btn-danger']
                         active_valve = valve['relay']
+                        active_class = ["nav-link", "tab-pane fade", "nav-link active", "tab-pane fade show active"]
                         watering_session = session.query(WateringModel).filter(WateringModel.valve_id == valve_.id,
                                                                                WateringModel.status == True).first()
                         start_time = watering_session.creation_time
                         start_time = start_time.timestamp() * 1000
+                        volume = (datetime.now().timestamp() * 1000 - start_time) / 60000 * valve_.jet
+                        volume = round(volume, 1)
+                        valve['button'] = [volume, 'btn btn-danger']
                     elif relays_status[valve_.relay - 1] == 'f':
                         valve['button'] = ['Off', 'btn btn-success']
                     else:
@@ -278,6 +283,7 @@ class AreaView(MethodView):
 
                 response = make_response(render_template('irrigation_area.html',
                                                          head=area.head,
+                                                         active_class=active_class,
                                                          description=description,
                                                          valves=valves,
                                                          valves_str=valves_str,

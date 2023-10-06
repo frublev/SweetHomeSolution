@@ -6,13 +6,13 @@
 
 <nav>
   <div class="nav nav-tabs" id="nav-tab" role="tablist">
-    <button class="nav-link active" id="nav-watering-tab" data-bs-toggle="tab" data-bs-target="#nav-watering" type="button" role="tab" aria-controls="nav-watering" aria-selected="true">Watering</button>
+    <button class="{{ active_class[0] }}" id="nav-watering-tab" data-bs-toggle="tab" data-bs-target="#nav-watering" type="button" role="tab" aria-controls="nav-watering" aria-selected="true">Watering</button>
     <button class="nav-link" id="nav-description-tab" data-bs-toggle="tab" data-bs-target="#nav-description" type="button" role="tab" aria-controls="nav-description" aria-selected="false">Description</button>
-    <button class="nav-link" id="nav-valves-tab" data-bs-toggle="tab" data-bs-target="#nav-valves" type="button" role="tab" aria-controls="nav-valves" aria-selected="false">Valves</button>
+    <button class="{{ active_class[2] }}" id="nav-valves-tab" data-bs-toggle="tab" data-bs-target="#nav-valves" type="button" role="tab" aria-controls="nav-valves" aria-selected="false">Valves</button>
   </div>
 </nav>
 <div class="tab-content" id="nav-tabContent">
-  <div class="tab-pane fade show active" id="nav-watering" role="tabpanel" aria-labelledby="nav-watering-tab" tabindex="0">
+  <div class="{{ active_class[1] }}" id="nav-watering" role="tabpanel" aria-labelledby="nav-watering-tab" tabindex="0">
     <table class="table table-borderless">
       <tbody>
         <tr>
@@ -58,7 +58,7 @@
       </tbody>
     </table>
   </div>
-  <div class="tab-pane fade" id="nav-valves" role="tabpanel" aria-labelledby="nav-valves-tab" tabindex="0">
+  <div class="{{ active_class[3] }}" id="nav-valves" role="tabpanel" aria-labelledby="nav-valves-tab" tabindex="0">
     <table class="table table-borderless">
       <thead>
         <tr>
@@ -116,6 +116,7 @@
         button_class_text(rs1, watering_time);
         if (rs1[rl-1] == "f") {
           on_off = false;
+          start_time = 0;
           clearInterval(inter);
         }
       }, 3000)
@@ -125,6 +126,7 @@
 
   const postData = async (url = '', data = {}) => {
     relay = Object.values(data);
+    start_time = 0;
     const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
