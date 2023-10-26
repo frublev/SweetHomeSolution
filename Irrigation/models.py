@@ -8,6 +8,8 @@ from sqlalchemy import (
     func,
     Boolean
 )
+
+from sqlalchemy.types import ARRAY
 from sqlalchemy_utils import EmailType
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -135,7 +137,7 @@ class SprinklerModel(Base):
 class WateringModel(Base):
     __tablename__ = "watering"
     id = Column(Integer, primary_key=True)
-    creation_time = Column(DateTime, server_default=func.now())
+    creation_time = Column(DateTime, nullable=True)
     stop_time = Column(DateTime)
     volume = Column(Float)
     status = Column(Boolean, nullable=True)
@@ -161,4 +163,31 @@ class WateringModel(Base):
             'description': self.description,
             'model': self.model,
             'jet': self.jet,
+        }
+
+
+class WateringSchemeModel(Base):
+    __tablename__ = "scheme"
+    id = Column(Integer, primary_key=True)
+    creation_time = Column(DateTime, server_default=func.now())
+    volume = Column(Float)
+    volume_auto = Column(Boolean, nullable=True)
+    schedule = Column(ARRAY(Integer), nullable=True)
+    schedule_program = Column(Integer, nullable=True)
+    status = Column(Boolean, nullable=True)
+    area_id = Column(Integer, ForeignKey('areas.id'))
+    area = relationship(AreaModel, lazy='joined')
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(UserModel, lazy='joined')
+
+    def to_dict(self):
+        return {
+            'creation_time': self.creation_time,
+            'volume': self.volume,
+            'volume_auto': self.volume_auto,
+            'schedule': self.schedule,
+            'schedule_program': self.schedule_program,
+            'status': self.status,
+            'area_id': self.area_id,
+            'user_id': self.user_id
         }

@@ -1,0 +1,68 @@
+1. Error from thread
+
+Exception in thread Thread-1 (req_test):
+Traceback (most recent call last):
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connectionpool.py", line 790, in urlopen
+    response = self._make_request(
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    response = conn.getresponse()
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connection.py", line 461, in getresponse
+    httplib_response = super().getresponse()
+  File "D:\Python\Python310\lib\http\client.py", line 1374, in getresponse
+    response.begin()
+  File "D:\Python\Python310\lib\http\client.py", line 318, in begin
+    version, status, reason = self._read_status()
+  File "D:\Python\Python310\lib\http\client.py", line 287, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\requests\adapters.py", line 486, in send
+    resp = conn.urlopen(
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connectionpool.py", line 844, in urlopen
+    retries = retries.increment(
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\util\retry.py", line 470, in increment
+    raise reraise(type(error), error, _stacktrace)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\util\util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connectionpool.py", line 790, in urlopen
+    response = self._make_request(
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    response = conn.getresponse()
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\urllib3\connection.py", line 461, in getresponse
+    httplib_response = super().getresponse()
+  File "D:\Python\Python310\lib\http\client.py", line 1374, in getresponse
+    response.begin()
+  File "D:\Python\Python310\lib\http\client.py", line 318, in begin
+    version, status, reason = self._read_status()
+  File "D:\Python\Python310\lib\http\client.py", line 287, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Python\Python310\lib\threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "D:\Python\Python310\lib\threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "D:\CC-Projects\SweetHomeSolution\Irrigation\views.py", line 413, in req_test
+    print(request_pin_status(url_ard))
+  File "D:\CC-Projects\SweetHomeSolution\Irrigation\arduinos.py", line 12, in request_pin_status
+    response_ard = get(url, timeout=20)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\requests\api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\requests\api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "D:\CC-Projects\SweetHomeSolution\venv\lib\site-packages\requests\adapters.py", line 501, in send
+    raise ConnectionError(err, request=request)
+requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+
+2.

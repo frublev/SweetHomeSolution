@@ -135,6 +135,7 @@
     let valve_status = await response.json();
     button_class_text(valve_status.fn, 0);
     let rs2 = valve_status.fn;
+    start_time = valve_status.start_time_;
     rs2 = rs2.slice(0, 4);
     wait_off();
     watering(rs2, relay);

@@ -1,5 +1,6 @@
-from datetime import datetime
-from threading import Timer
+import time as pause
+from datetime import datetime, time, timedelta
+from threading import Thread
 
 from flask import render_template, request, jsonify, make_response, redirect
 from flask.views import MethodView
@@ -16,8 +17,8 @@ import os
 
 from dotenv import load_dotenv
 
-from .arduinos import request_pin_status, url_ard
-from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel
+from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time
+from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel, WateringSchemeModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 print(dotenv_path)
@@ -30,6 +31,8 @@ engine = create_engine(PG_DSN)
 Session = sessionmaker(bind=engine)
 
 Base.metadata.create_all(engine)
+
+start = datetime(2021, 1, 1)
 
 
 class CreateUserValidation(pydantic.BaseModel):
@@ -323,31 +326,20 @@ class AreaView(MethodView):
 
 
 @app.route('/valve_manual', methods=['POST'])
-def valve_manual(timer='0010'):
+def valve_manual(timer='0030'):
     relays_status = request_pin_status(url_ard)
     if relays_status == 'dddd':
         js_json = {'fn': 'dddd'}
     else:
         request_data = request.get_json()
+        relay = int(request_data['relay'])
         with Session() as session:
             token = check_token(session)
             if token:
-                relay = int(request_data['relay'])
-                pin = 7 - relay + 1
-                if relays_status[relay - 1] == 'f':
-                    response = get(url_ard + f'digital_pin={pin}&timer={timer}&pin_high')
-                    if response.status_code == 200:
-                        new_watering = WateringModel()
-                        new_watering.user_id = token.user.id
-                        valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
-                        new_watering.valve_id = valve.id
-                        new_watering.status = True
-                        session.add(new_watering)
-                        session.commit()
-                else:
-                    response = get(url_ard + f'digital_pin={pin}&pin_low')
+                response, start_time = valve_on_off(session, relay, relays_status, timer, token)
         response = response.text
-        js_json = {'fn': response}
+        start_time = start_time.timestamp() * 1000
+        js_json = {'fn': response, 'start_time_': start_time}
     return jsonify(js_json)
 
 
@@ -401,17 +393,86 @@ class SprinklerView(MethodView):
                 return jsonify(new_sprinkler.to_dict())
 
 
-def ppprint(word):
-    print(word)
+class SchemeView(MethodView):
+    def post(self):
+        scheme_data = request.json
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                new_scheme = WateringSchemeModel(**scheme_data)
+                new_scheme.user_id = token.user.id
+                session.add(new_scheme)
+                session.commit()
+                return jsonify(new_scheme.to_dict())
+
+    def patch(self, scheme_id: int):
+        global start
+        global area
+        scheme_data = request.json
+        with Session() as session:
+            token = check_token(session)
+            if token:
+                session.query(WateringSchemeModel).filter(WateringSchemeModel.id == scheme_id).update(scheme_data)
+                session.commit()
+                upd_scheme = session.query(WateringSchemeModel).get(scheme_id)
+                start, area = get_start_time(session, start)
+                return jsonify(upd_scheme.to_dict())
 
 
-a = 'safdsd'
-t = Timer(3.0, ppprint, [a])
-t.start()
+def req_test():
+    global start
+    global area
+    while app:
+        if datetime.now() >= start:
+            with Session() as session:
+                print(f'Current time: {datetime.now()}')
+                print(f'Pin status: {request_pin_status(url_ard)}')
+                print(f'Start time: {start}')
+                scheme = session.query(WateringSchemeModel).filter(WateringSchemeModel.area == area,
+                                                                  WateringSchemeModel.status == True).first()
+                volume = scheme.volume
+                valves = session.query(ValveModel).filter(ValveModel.area == area).all()
+                print(f'Starting area {area}')
+                start, area = get_start_time(session, start)
+                print()
+        print(start)
+        pause.sleep(30)
+
+
+def start_timer():
+    my_thread = Thread(target=req_test, daemon=True)
+    my_thread.start()
+
+
+with Session() as session:
+    start, area = get_start_time(session, start)
+
+# with Session() as session:
+#     current_datetime = datetime.now()
+#     current_date = current_datetime.date()
+#     dt0 = datetime.combine(current_date, time(0, 0))
+#     next_time = session.query(WateringSchemeModel).filter(WateringSchemeModel.status == True).all()
+#     if next_time:
+#         for nt in next_time:
+#             next_start = nt.schedule
+#             next_start.sort()
+#             for ns in next_start:
+#                 dt1 = dt0 + timedelta(seconds=ns)
+#                 if dt1 > current_datetime > start or start > dt1 > current_datetime:
+#                     start = dt1
+#                     area = nt.area_id
+#                     break
+#             else:
+#                 start = dt1 + timedelta(days=1)
+
+
+start_timer()
 
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])
 app.add_url_rule('/irrigation/areas/', view_func=AreaView.as_view('create_area'), methods=['POST'])
+app.add_url_rule('/irrigation/schemes/', view_func=SchemeView.as_view('create_scheme'), methods=['POST'])
+app.add_url_rule('/irrigation/schemes/<int:scheme_id>/', view_func=SchemeView.as_view('edit_scheme'), methods=['PATCH'])
 app.add_url_rule('/irrigation/valves/', view_func=ValveView.as_view('create_valve'), methods=['POST'])
 app.add_url_rule('/irrigation/sprinklers/', view_func=SprinklerView.as_view('create_sprinkler'), methods=['POST'])
 app.add_url_rule('/create_user/', view_func=UserView.as_view('create_user'), methods=['POST'])
