@@ -16,29 +16,28 @@ def create_scheme(data_, schedule=[]):
     print(response.json())
 
 
-def edit_scheme(id_, data_, schedule=[]):
+def edit_scheme(id_, schedule=[]):
+    data = {
+        'volume': 300,
+        'volume_auto': False,
+        'schedule_program': 1,
+        'area_id': id_,
+        'status': True,
+    }
     url_flask = 'http://192.168.0.105:5000/irrigation/schemes/' + id_ + '/'
     schedule_ = []
     for s in schedule:
         time_ = s[0] * 3600 + s[1] * 60
         schedule_.append(time_)
-    data_['schedule'] = schedule_
-    response = requests.patch(url_flask, json=data_, cookies={'token': cook})
+    data['schedule'] = schedule_
+    response = requests.patch(url_flask, json=data, cookies={'token': cook})
     print(response.status_code)
     print(response.json())
 
 
-data = {
-    'volume': 300,
-    'volume_auto': False,
-    'schedule_program': 1,
-    'area_id': 1,
-    'status': True,
-}
-
-
 # create_scheme(data, [[10, 45], [15, 55]])
-edit_scheme('1', data, [[10, 10], [11, 52], [16, 27]])
+edit_scheme('1', [[10, 30], [11, 52], [15, 51]])
+edit_scheme('2', [[10, 20], [12, 30], [15, 52]])
 
 # dt = datetime.now()
 # d = datetime.date(dt)

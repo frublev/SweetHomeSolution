@@ -49,7 +49,7 @@ def valve_on_off(session, relay, relays_status, timer, token):
     return response, start_time
 
 
-def get_start_time(session, start):
+def get_start_time(session, start, area=1):
     current_datetime = datetime.now()
     current_date = current_datetime.date()
     dt0 = datetime.combine(current_date, time(0, 0))
@@ -65,8 +65,10 @@ def get_start_time(session, start):
                     area = nt.area_id
                     break
             else:
-                start = dt0 + timedelta(days=1, seconds=next_start[0])
-                area = nt.area_id
+                if (dt0 + timedelta(days=1, seconds=next_start[0])) < start or start < dt0:
+                    start = dt0 + timedelta(days=1, seconds=next_start[0])
+                    area = nt.area_id
+        print(f'get_start_time {start, area}')
         return start, area
     else:
         return 'No connection to database of there is no true-status-data in WateringScheme'

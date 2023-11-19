@@ -428,14 +428,17 @@ def req_test():
                 print(f'Current time: {datetime.now()}')
                 print(f'Pin status: {request_pin_status(url_ard)}')
                 print(f'Start time: {start}')
-                scheme = session.query(WateringSchemeModel).filter(WateringSchemeModel.area == area,
+                scheme = session.query(WateringSchemeModel).filter(WateringSchemeModel.area_id == area,
                                                                   WateringSchemeModel.status == True).first()
                 volume = scheme.volume
-                valves = session.query(ValveModel).filter(ValveModel.area == area).all()
+                valves = session.query(ValveModel).filter(ValveModel.area_id == area).all()
                 print(f'Starting area {area}')
+                print(f'Volume {volume}')
+                start = datetime(2021, 1, 1)
                 start, area = get_start_time(session, start)
+                print(start, area)
                 print()
-        print(start)
+        print(start, area)
         pause.sleep(30)
 
 
