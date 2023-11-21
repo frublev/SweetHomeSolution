@@ -139,6 +139,20 @@ def check_token_base():
             return response
 
 
+@app.route('/irrigation/')
+@app.route('/irrigation')
+def irrigation():
+    with Session() as session:
+        token = check_token(session)
+        if token:
+            areas = session.query(AreaModel).order_by(AreaModel.id).all()
+    return render_template(
+        'irrigation.html',
+        year=datetime.now().year,
+        areas=areas,
+    )
+
+
 class WelcomeView(MethodView):
     def get(self):
         with Session() as session:
