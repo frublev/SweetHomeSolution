@@ -33,6 +33,9 @@ Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
 start = datetime(2021, 1, 1)
+scheme = None
+valves = ()
+valve = 0
 
 
 class CreateUserValidation(pydantic.BaseModel):
@@ -407,7 +410,9 @@ class SchemeView(MethodView):
 
     def patch(self, scheme_id: int):
         global start
-        global area
+        global scheme
+        global valves
+        global valve
         scheme_data = request.json
         with Session() as session:
             token = check_token(session)
@@ -415,30 +420,31 @@ class SchemeView(MethodView):
                 session.query(WateringSchemeModel).filter(WateringSchemeModel.id == scheme_id).update(scheme_data)
                 session.commit()
                 upd_scheme = session.query(WateringSchemeModel).get(scheme_id)
-                start, area = get_start_time(session, start)
+                start, scheme, valves, valve, duration = get_start_time(session, start, scheme, valves, valve)
                 return jsonify(upd_scheme.to_dict())
 
 
 def req_test():
     global start
-    global area
+    global scheme
+    global valves
+    global valve
+    global duration
     while app:
         if datetime.now() >= start:
             with Session() as session:
                 print(f'Current time: {datetime.now()}')
-                print(f'Pin status: {request_pin_status(url_ard)}')
+                pin_status = request_pin_status(url_ard)
+                print(f'Pin status: {pin_status}')
                 print(f'Start time: {start}')
-                scheme = session.query(WateringSchemeModel).filter(WateringSchemeModel.area_id == area,
-                                                                  WateringSchemeModel.status == True).first()
-                volume = scheme.volume
-                valves = session.query(ValveModel).filter(ValveModel.area_id == area).all()
-                print(f'Starting area {area}')
-                print(f'Volume {volume}')
-                start = datetime(2021, 1, 1)
-                start, area = get_start_time(session, start)
-                print(start, area)
+                duration = scheme.volume / len(valves) / valve.jet * 60
+                print(f'Duration {duration}')
+                print(f'Starting area {scheme.area_id}, valve {valve.id}')
+                start, scheme, valves, valve, duration = get_start_time(session, start, scheme, valves, valve, duration)
+                print(f'Next time {start}')
+                print(f'Next area {scheme.area_id}')
                 print()
-        print(start, area)
+        print(start, valve.id, valves)
         pause.sleep(30)
 
 
@@ -448,25 +454,7 @@ def start_timer():
 
 
 with Session() as session:
-    start, area = get_start_time(session, start)
-
-# with Session() as session:
-#     current_datetime = datetime.now()
-#     current_date = current_datetime.date()
-#     dt0 = datetime.combine(current_date, time(0, 0))
-#     next_time = session.query(WateringSchemeModel).filter(WateringSchemeModel.status == True).all()
-#     if next_time:
-#         for nt in next_time:
-#             next_start = nt.schedule
-#             next_start.sort()
-#             for ns in next_start:
-#                 dt1 = dt0 + timedelta(seconds=ns)
-#                 if dt1 > current_datetime > start or start > dt1 > current_datetime:
-#                     start = dt1
-#                     area = nt.area_id
-#                     break
-#             else:
-#                 start = dt1 + timedelta(days=1)
+    start, scheme, valves, valve, duration = get_start_time(session, start, scheme, valves, valve)
 
 
 start_timer()

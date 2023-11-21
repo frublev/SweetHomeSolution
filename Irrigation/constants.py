@@ -1,0 +1,1 @@
+WATERING_NORM = 5.5

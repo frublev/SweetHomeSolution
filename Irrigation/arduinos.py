@@ -49,26 +49,44 @@ def valve_on_off(session, relay, relays_status, timer, token):
     return response, start_time
 
 
-def get_start_time(session, start, area=1):
-    current_datetime = datetime.now()
-    current_date = current_datetime.date()
-    dt0 = datetime.combine(current_date, time(0, 0))
-    next_time = session.query(WateringSchemeModel).filter(WateringSchemeModel.status == True).all()
-    if next_time:
-        for nt in next_time:
-            next_start = nt.schedule
-            next_start.sort()
-            for ns in next_start:
-                dt1 = dt0 + timedelta(seconds=ns)
-                if dt1 > current_datetime > start or start > dt1 > current_datetime:
-                    start = dt1
-                    area = nt.area_id
-                    break
-            else:
-                if (dt0 + timedelta(days=1, seconds=next_start[0])) < start or start < dt0:
-                    start = dt0 + timedelta(days=1, seconds=next_start[0])
-                    area = nt.area_id
-        print(f'get_start_time {start, area}')
-        return start, area
+def get_start_time(session, start_, scheme_=None, valves_=(), valve_=0, duration_=0):
+    pause_till = start_ + timedelta(seconds=duration_ + 60)
+    if len(valves_) > 1:
+        i = valves_.index(valve_)
     else:
-        return 'No connection to database of there is no true-status-data in WateringScheme'
+        i = 100
+    if i + 1 < len(valves_):
+        start_ = pause_till
+        valve_ = valves_[i + 1]
+    else:
+        start_ = datetime(2021, 1, 1)
+        current_datetime = datetime.now()
+        current_date = current_datetime.date()
+        dt0 = datetime.combine(current_date, time(0, 0))
+        next_time = session.query(WateringSchemeModel).filter(WateringSchemeModel.status == True).all()
+        if next_time:
+            for nt in next_time:
+                next_start = nt.schedule
+                next_start.sort()
+                for ns in next_start:
+                    dt1 = dt0 + timedelta(seconds=ns)
+                    if dt1 > current_datetime > start_ or start_ > dt1 > current_datetime:
+                        start_ = dt1
+                        scheme_ = nt
+                        break
+                else:
+                    if (dt0 + timedelta(days=1, seconds=next_start[0])) < start_ or start_ < dt0:
+                        start_ = dt0 + timedelta(days=1, seconds=next_start[0])
+                        scheme_ = nt
+            valves_ = session.query(ValveModel).filter(ValveModel.area_id == scheme_.area_id).all()
+            if pause_till - timedelta(seconds=duration_ + 60) < start_ < pause_till:
+                start_ = pause_till
+            # valves_ = []
+            # for v in valves_q:
+            #     valves_.append(int(v.id))
+            valve_ = valves_[0]
+            valves_ = tuple(valves_)
+        else:
+            start_, scheme_, valves_, valve_, duration_ = datetime(2021, 1, 1), None, (), 0, 0
+    print(f'get_start_time {start_, scheme_.area_id, valves_, valve_.id, duration_}')
+    return start_, scheme_, valves_, valve_, duration_

@@ -36,8 +36,8 @@ def edit_scheme(id_, schedule=[]):
 
 
 # create_scheme(data, [[10, 45], [15, 55]])
-edit_scheme('1', [[10, 30], [11, 52], [15, 51]])
-edit_scheme('2', [[10, 20], [12, 30], [15, 52]])
+edit_scheme('1', [[10, 37], [11, 52], [23, 2]])
+edit_scheme('2', [[10, 34], [12, 30], [23, 4]])
 
 # dt = datetime.now()
 # d = datetime.date(dt)
