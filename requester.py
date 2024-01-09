@@ -4,7 +4,13 @@ from datetime import datetime, timedelta, date, time
 cook = '67116395-dc55-4cc7-840c-a258f2ac2d28'
 
 
-def create_scheme(data_, schedule=[]):
+def create_scheme(schedule):
+    data_ = {
+        'volume': 300,
+        'volume_auto': False,
+        'schedule_program': 1,
+        'status': True,
+    }
     schedule_ = []
     for s in schedule:
         time_ = s[0] * 3600 + s[1] * 60
@@ -16,12 +22,11 @@ def create_scheme(data_, schedule=[]):
     print(response.json())
 
 
-def edit_scheme(id_, schedule=[]):
+def edit_scheme(id_, schedule):
     data = {
         'volume': 300,
         'volume_auto': False,
         'schedule_program': 1,
-        'area_id': id_,
         'status': True,
     }
     url_flask = 'http://192.168.0.105:5000/irrigation/schemes/' + id_ + '/'
@@ -35,9 +40,10 @@ def edit_scheme(id_, schedule=[]):
     print(response.json())
 
 
-# create_scheme(data, [[10, 45], [15, 55]])
-edit_scheme('1', [[10, 37], [11, 52], [23, 2]])
-edit_scheme('2', [[10, 34], [12, 30], [23, 4]])
+# create_scheme([[10, 45], [16, 30]])
+# create_scheme([[11, 45], [17, 30]])
+edit_scheme('1', [[10, 45], [16, 30]])
+edit_scheme('2', [[11, 45], [17, 30]])
 
 # dt = datetime.now()
 # d = datetime.date(dt)

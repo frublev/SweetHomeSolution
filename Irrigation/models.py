@@ -45,9 +45,33 @@ class Token(Base):
     __tablename__ = "tokens"
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True)
     creation_time = Column(DateTime, server_default=func.now())
-    user_id = Column(Integer, ForeignKey('users.id'))
     status = Column(Boolean, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship(UserModel, lazy='joined')
+
+
+class WateringSchemeModel(Base):
+    __tablename__ = "schemes"
+    id = Column(Integer, primary_key=True)
+    creation_time = Column(DateTime, server_default=func.now())
+    volume = Column(Float)
+    volume_auto = Column(Boolean, nullable=True)
+    schedule = Column(ARRAY(Integer), nullable=True)
+    schedule_program = Column(Integer, nullable=True)
+    status = Column(Boolean, nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(UserModel, lazy='joined')
+
+    def to_dict(self):
+        return {
+            'creation_time': self.creation_time,
+            'volume': self.volume,
+            'volume_auto': self.volume_auto,
+            'schedule': self.schedule,
+            'schedule_program': self.schedule_program,
+            'status': self.status,
+            'user_id': self.user_id
+        }
 
 
 class AreaModel(Base):
@@ -57,6 +81,9 @@ class AreaModel(Base):
     description = Column(String(1000), nullable=False)
     square = Column(Float, nullable=False)
     creation_time = Column(DateTime, server_default=func.now())
+    scheme_id = Column(Integer, ForeignKey('schemes.id'))
+    scheme = relationship(WateringSchemeModel, lazy='joined')
+    status = Column(Boolean, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship(UserModel, lazy='joined')
 
@@ -66,8 +93,10 @@ class AreaModel(Base):
             'description': self.description,
             'square': self.square,
             'creation_time': int(self.creation_time.timestamp()),
+            'status': self.status,
             'id': self.id,
-            'user_id': self.user_id
+            'user_id': self.user_id,
+            'scheme_id': self.scheme_id
         }
 
 
@@ -163,31 +192,4 @@ class WateringModel(Base):
             'description': self.description,
             'model': self.model,
             'jet': self.jet,
-        }
-
-
-class WateringSchemeModel(Base):
-    __tablename__ = "scheme"
-    id = Column(Integer, primary_key=True)
-    creation_time = Column(DateTime, server_default=func.now())
-    volume = Column(Float)
-    volume_auto = Column(Boolean, nullable=True)
-    schedule = Column(ARRAY(Integer), nullable=True)
-    schedule_program = Column(Integer, nullable=True)
-    status = Column(Boolean, nullable=True)
-    area_id = Column(Integer, ForeignKey('areas.id'))
-    area = relationship(AreaModel, lazy='joined')
-    user_id = Column(Integer, ForeignKey('users.id'))
-    user = relationship(UserModel, lazy='joined')
-
-    def to_dict(self):
-        return {
-            'creation_time': self.creation_time,
-            'volume': self.volume,
-            'volume_auto': self.volume_auto,
-            'schedule': self.schedule,
-            'schedule_program': self.schedule_program,
-            'status': self.status,
-            'area_id': self.area_id,
-            'user_id': self.user_id
         }

@@ -32,10 +32,11 @@ Session = sessionmaker(bind=engine)
 
 Base.metadata.create_all(engine)
 
-start = datetime(2021, 1, 1)
-scheme = None
-valves = ()
-valve = 0
+g_start = datetime(2021, 1, 1)
+g_area = None
+g_valves = ()
+g_valve = 0
+g_duration = 0
 
 
 class CreateUserValidation(pydantic.BaseModel):
@@ -146,10 +147,16 @@ def irrigation():
         token = check_token(session)
         if token:
             areas = session.query(AreaModel).order_by(AreaModel.id).all()
+            layout = []
+            for ar in areas:
+                area = ar.to_dict()
+                area['volume_auto'] = ar.scheme.volume_auto
+                area['schedule_program'] = ar.scheme.schedule_program
+                layout.append(area)
     return render_template(
         'irrigation.html',
-        year=datetime.now().year,
-        areas=areas,
+        layout=layout,
+        year=datetime.now().year
     )
 
 
@@ -423,10 +430,11 @@ class SchemeView(MethodView):
                 return jsonify(new_scheme.to_dict())
 
     def patch(self, scheme_id: int):
-        global start
-        global scheme
-        global valves
-        global valve
+        global g_start
+        global g_area
+        global g_valves
+        global g_valve
+        global g_duration
         scheme_data = request.json
         with Session() as session:
             token = check_token(session)
@@ -434,31 +442,33 @@ class SchemeView(MethodView):
                 session.query(WateringSchemeModel).filter(WateringSchemeModel.id == scheme_id).update(scheme_data)
                 session.commit()
                 upd_scheme = session.query(WateringSchemeModel).get(scheme_id)
-                start, scheme, valves, valve, duration = get_start_time(session, start, scheme, valves, valve)
+                g_start, g_area, g_valves, g_valve, g_duration = get_start_time(
+                    session, g_start, g_area, g_valves, g_valve)
                 return jsonify(upd_scheme.to_dict())
 
 
 def req_test():
-    global start
-    global scheme
-    global valves
-    global valve
-    global duration
+    global g_start
+    global g_area
+    global g_valves
+    global g_valve
+    global g_duration
     while app:
-        if datetime.now() >= start:
+        if datetime.now() >= g_start:
             with Session() as session:
                 print(f'Current time: {datetime.now()}')
                 pin_status = request_pin_status(url_ard)
                 print(f'Pin status: {pin_status}')
-                print(f'Start time: {start}')
-                duration = scheme.volume / len(valves) / valve.jet * 60
-                print(f'Duration {duration}')
-                print(f'Starting area {scheme.area_id}, valve {valve.id}')
-                start, scheme, valves, valve, duration = get_start_time(session, start, scheme, valves, valve, duration)
-                print(f'Next time {start}')
-                print(f'Next area {scheme.area_id}')
+                print(f'Start time: {g_start}')
+                g_duration = g_area.scheme.volume / len(g_valves) / g_valve.jet * 60
+                print(f'Duration {g_duration}')
+                print(f'Starting area {g_area.id}, valve {g_valve.id}')
+                g_start, g_area, g_valves, g_valve, g_duration = get_start_time(
+                    session, g_start, g_area, g_valves, g_valve, g_duration)
+                print(f'Next time {g_start}')
+                print(f'Next area {g_area.id}')
                 print()
-        print(start, valve.id, valves)
+        print(g_start, g_valve.id, g_valves)
         pause.sleep(30)
 
 
@@ -468,7 +478,7 @@ def start_timer():
 
 
 with Session() as session:
-    start, scheme, valves, valve, duration = get_start_time(session, start, scheme, valves, valve)
+    g_start, g_area, g_valves, g_valve, g_duration = get_start_time(session, g_start, g_area, g_valves, g_valve)
 
 
 start_timer()

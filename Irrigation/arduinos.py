@@ -3,8 +3,7 @@ from datetime import datetime, time, timedelta
 from requests.exceptions import ConnectTimeout, ConnectionError
 from urllib3.exceptions import ProtocolError
 
-from Irrigation.models import WateringModel, ValveModel, WateringSchemeModel
-
+from Irrigation.models import WateringModel, ValveModel, WateringSchemeModel, AreaModel
 
 url_ard = 'http://192.168.0.177/'
 
@@ -49,7 +48,7 @@ def valve_on_off(session, relay, relays_status, timer, token):
     return response, start_time
 
 
-def get_start_time(session, start_, scheme_=None, valves_=(), valve_=0, duration_=0):
+def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=0):
     pause_till = start_ + timedelta(seconds=duration_ + 60)
     if len(valves_) > 1:
         i = valves_.index(valve_)
@@ -63,30 +62,28 @@ def get_start_time(session, start_, scheme_=None, valves_=(), valve_=0, duration
         current_datetime = datetime.now()
         current_date = current_datetime.date()
         dt0 = datetime.combine(current_date, time(0, 0))
-        next_time = session.query(WateringSchemeModel).filter(WateringSchemeModel.status == True).all()
-        if next_time:
-            for nt in next_time:
-                next_start = nt.schedule
+        areas = session.query(AreaModel).order_by(AreaModel.id).all()
+        if areas:
+            for ar in areas:
+                next_start = ar.scheme.schedule
                 next_start.sort()
                 for ns in next_start:
                     dt1 = dt0 + timedelta(seconds=ns)
                     if dt1 > current_datetime > start_ or start_ > dt1 > current_datetime:
                         start_ = dt1
-                        scheme_ = nt
+                        area_ = ar
                         break
                 else:
                     if (dt0 + timedelta(days=1, seconds=next_start[0])) < start_ or start_ < dt0:
                         start_ = dt0 + timedelta(days=1, seconds=next_start[0])
-                        scheme_ = nt
-            valves_ = session.query(ValveModel).filter(ValveModel.area_id == scheme_.area_id).all()
+                        area_ = ar
+            valves_ = session.query(ValveModel).filter(ValveModel.area_id == area_.id).all()
             if pause_till - timedelta(seconds=duration_ + 60) < start_ < pause_till:
                 start_ = pause_till
-            # valves_ = []
-            # for v in valves_q:
-            #     valves_.append(int(v.id))
             valve_ = valves_[0]
             valves_ = tuple(valves_)
         else:
-            start_, scheme_, valves_, valve_, duration_ = datetime(2021, 1, 1), None, (), 0, 0
-    print(f'get_start_time {start_, scheme_.area_id, valves_, valve_.id, duration_}')
-    return start_, scheme_, valves_, valve_, duration_
+            start_, area_, valves_, valve_, duration_ = datetime(2021, 1, 1), None, (), 0, 0
+    if area_:
+        print(f'get_start_time {start_, area_, valves_, valve_, duration_}')
+    return start_, area_, valves_, valve_, duration_

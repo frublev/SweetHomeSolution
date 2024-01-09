@@ -62,7 +62,7 @@
     <table class="table table-borderless">
       <thead>
         <tr>
-          <th scope="col">Head</th>
+          <th scope="col">#</th>
           <th scope="col">Model</th>
           <th scope="col">Speed, l/min</th>
           <th scope="col">Status</th>
@@ -79,7 +79,7 @@
                     onclick="postData('/valve_manual', { relay: {{ unit['relay'] }}})"
                     class="{{ unit['button'][1] }}"
                     style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;">{{ unit['button'][0] }}</button>
-          </td>>
+          </td>
         </tr>
       {% endfor %}
       </tbody>

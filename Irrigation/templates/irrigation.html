@@ -6,18 +6,72 @@
 
 <table class="table table-borderless">
   <tbody>
-  {% for area in areas %}
+  {% for area in layout %}
     <tr>
-      <td>{{ area.id }}</td>
-      <td>{{ area.head }}</td>
+      <td>{{ area['id'] }}</td>
+      <td>{{ area['head'] }}</td>
       <td>
-        <button id="are{{ unit['relay'] }}"
-          onclick="postData('/valve_manual', { relay: {{ unit['relay'] }}})"
-          class="{{ unit['button'][1] }}"
-          style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;">{{ unit['button'][0] }}</button>
-      </td>>
+        <div class="form-check form-switch">
+          <input class="form-check-input"
+                 type="checkbox"
+                 role="switch"
+                 name="area_status"
+                 id="area{{ area['id'] }}"
+                 onclick="area_status('/irrigation/{{ area.id }}/', '{{ area['status'] }}')"
+                 value="{{ area['status'] }}">
+          <label class="form-check-label" for="area{{ area['id'] }}">checked</label>
+        </div>
+      </td>
     </tr>
   {% endfor %}
 </table>
+
+<div id="layout" style="display: none;">{{ layout }}</div>
+
+<script>
+  let elements = document.getElementsByName("area_status");
+  for (let i = 0; i < elements.length; i++) {
+    if (elements[i].value == "True") {elements[i].checked = true};
+  }
+
+  const area_status = async (url = '', status) => {
+    let data = {}
+    if (status == "True") {
+      data = {status: false};
+    }
+    else {
+      data = {status: true}
+    }
+<!--    alert(data);-->
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    let area_status = await response.json();
+    return;
+  }
+
+<!--  const area_status = async (url = '', data) => {-->
+<!--    status = Object.values(data);-->
+<!--    alert(status)-->
+<!--    if (status == "True") {data = {status: false} else {data = {status: true}}-->
+<!--    start_time = 0;-->
+<!--    const response = await fetch(url, {-->
+<!--      method: 'PATCH',-->
+<!--      headers: {'Content-Type': 'application/json'},-->
+<!--      body: JSON.stringify(data)-->
+<!--    });-->
+<!--    let valve_status = await response.json();-->
+<!--  return;-->
+<!--  }-->
+
+  function area_status1111111(area_id) {
+    let area = "area" + area_id;
+    let id_ = document.getElementById(area).checked;
+    let status_ = document.getElementById(area).value;
+    if (id_ == true) {alert(status_)} else {alert("off")}
+  }
+</script>
 
 {% endblock %}
