@@ -4,6 +4,19 @@ from datetime import datetime, timedelta, date, time
 cook = '67116395-dc55-4cc7-840c-a258f2ac2d28'
 
 
+def create_user(user_name, password, phone_num, email):
+    url_flask = 'http://192.168.0.104:5000/create_user/'
+    data_ = {
+        'user_name': user_name,
+        'password': password,
+        'phone_num': phone_num,
+        'email': email
+    }
+    response = requests.post(url_flask, json=data_)
+    print(response.status_code)
+    print(response.json())
+
+
 def create_scheme(schedule):
     data_ = {
         'volume': 300,
@@ -40,10 +53,12 @@ def edit_scheme(id_, schedule):
     print(response.json())
 
 
-# create_scheme([[10, 45], [16, 30]])
+# create_user([[10, 45], [16, 30]])
 # create_scheme([[11, 45], [17, 30]])
-edit_scheme('1', [[10, 45], [16, 30]])
-edit_scheme('2', [[11, 45], [17, 30]])
+# edit_scheme('1', [[10, 45], [16, 30]])
+# edit_scheme('2', [[11, 45], [17, 30]])
+
+# login_test('frublev', '12345678', '+421905069102', 'f.rublev@gmail.com')
 
 # dt = datetime.now()
 # d = datetime.date(dt)
