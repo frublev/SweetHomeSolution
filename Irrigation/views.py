@@ -27,6 +27,7 @@ if os.path.exists(dotenv_path):
 
 bcrypt = Bcrypt(app)
 PG_DSN = os.getenv('PG_DSN')
+cook = os.getenv('COOK')
 engine = create_engine(PG_DSN)
 Session = sessionmaker(bind=engine)
 
@@ -362,7 +363,8 @@ def valve_manual(timer='0030'):
             if token:
                 response, start_time = valve_on_off(session, relay, relays_status, timer, token)
         response = response.text
-        start_time = start_time.timestamp() * 1000
+        if start_time:
+            start_time = start_time.timestamp() * 1000
         js_json = {'fn': response, 'start_time_': start_time}
     return jsonify(js_json)
 
@@ -495,5 +497,3 @@ app.add_url_rule('/login/', view_func=Login.as_view('show_login_form'), methods=
 app.add_url_rule('/login/', view_func=Login.as_view('login'), methods=['POST'])
 app.add_url_rule('/welcome/', view_func=WelcomeView.as_view('show_welcome'), methods=['GET'])
 app.add_url_rule('/user/<int:user_id>/', view_func=UserView.as_view('get_user'), methods=['GET'])
-
-# 13:30 30/08 два куска мыла, яйца, пакеты для мусора

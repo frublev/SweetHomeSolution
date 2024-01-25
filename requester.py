@@ -1,11 +1,10 @@
 import requests
 from datetime import datetime, timedelta, date, time
-
-cook = '67116395-dc55-4cc7-840c-a258f2ac2d28'
+from Irrigation.views import cook
 
 
 def create_user(user_name, password, phone_num, email):
-    url_flask = 'http://192.168.0.104:5000/create_user/'
+    url_flask = 'http://192.168.0.108:5000/create_user/'
     data_ = {
         'user_name': user_name,
         'password': password,
@@ -29,7 +28,7 @@ def create_scheme(schedule):
         time_ = s[0] * 3600 + s[1] * 60
         schedule_.append(time_)
     data_['schedule'] = schedule_
-    url_flask = 'http://192.168.0.105:5000/irrigation/schemes/'
+    url_flask = 'http://192.168.0.108:5000/irrigation/schemes/'
     response = requests.post(url_flask, json=data_, cookies={'token': cook})
     print(response.status_code)
     print(response.json())
@@ -53,12 +52,12 @@ def edit_scheme(id_, schedule):
     print(response.json())
 
 
-# create_user([[10, 45], [16, 30]])
+create_scheme([[10, 45], [16, 30]])
 # create_scheme([[11, 45], [17, 30]])
 # edit_scheme('1', [[10, 45], [16, 30]])
 # edit_scheme('2', [[11, 45], [17, 30]])
 
-# login_test('frublev', '12345678', '+421905069102', 'f.rublev@gmail.com')
+# create_user('frublev', '12345678', '+421905069102', 'f.rublev@gmail.com')
 
 # dt = datetime.now()
 # d = datetime.date(dt)

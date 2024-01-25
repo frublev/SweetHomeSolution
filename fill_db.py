@@ -1,9 +1,10 @@
 import requests
+from Irrigation.views import cook
 
 
 def create_unit(data_, unit):
-    url_flask = 'http://192.168.0.104:5000/irrigation/' + unit + '/'
-    response = requests.post(url_flask, json=data_, cookies={'token': 'bde14bfe-e862-4719-bf24-f8276ce2e59c'})
+    url_flask = 'http://192.168.0.108:5000/irrigation/' + unit + '/'
+    response = requests.post(url_flask, json=data_, cookies={'token': cook})
     print(response.status_code)
     print(response.json())
 
@@ -12,12 +13,14 @@ areas1 = {
     'head': 'Northern square',
     'description': 'North of plot',
     'square': 52.5,
+    'scheme_id': 1
 }
 
 areas2 = {
     'head': 'Southern rectangle',
     'description': 'South of plot',
     'square': 41.5,
+    'scheme_id': 1
 }
 
 

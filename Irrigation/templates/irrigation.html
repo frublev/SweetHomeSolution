@@ -5,11 +5,22 @@
 <h6 class="display-6">Irrigation areas</h6>
 
 <table class="table table-borderless">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Area</th>
+      <th scope="col">On/Off</th>
+      <th scope="col">Start time</th>
+      <th scope="col">Frequency</th>
+      <th scope="col">Duration</th>
+    </tr>
+  </thead>
+
   <tbody>
   {% for area in layout %}
     <tr>
       <td>{{ area['id'] }}</td>
-      <td>{{ area['head'] }}</td>
+      <td><a href='/irrigation/{{ area.id }}/' class="link-success">{{ area['head'] }}</a></td>
       <td>
         <div class="form-check form-switch">
           <input class="form-check-input"
@@ -19,7 +30,7 @@
                  id="area{{ area['id'] }}"
                  onclick="area_status('/irrigation/{{ area.id }}/', '{{ area['status'] }}')"
                  value="{{ area['status'] }}">
-          <label class="form-check-label" for="area{{ area['id'] }}">checked</label>
+          <label id = "check_area{{ area['id'] }}" class="form-check-label" for="area{{ area['id'] }}">checked</label>
         </div>
       </td>
     </tr>
@@ -31,7 +42,11 @@
 <script>
   let elements = document.getElementsByName("area_status");
   for (let i = 0; i < elements.length; i++) {
-    if (elements[i].value == "True") {elements[i].checked = true};
+    if (elements[i].value == "True") {
+      elements[i].checked = true;
+      let lab = 'check_' + elements[i].id + '';
+        document.getElementById(lab).innerText = 'Auto';
+      };
   }
 
   const area_status = async (url = '', status) => {
@@ -51,20 +66,6 @@
     let area_status = await response.json();
     return;
   }
-
-<!--  const area_status = async (url = '', data) => {-->
-<!--    status = Object.values(data);-->
-<!--    alert(status)-->
-<!--    if (status == "True") {data = {status: false} else {data = {status: true}}-->
-<!--    start_time = 0;-->
-<!--    const response = await fetch(url, {-->
-<!--      method: 'PATCH',-->
-<!--      headers: {'Content-Type': 'application/json'},-->
-<!--      body: JSON.stringify(data)-->
-<!--    });-->
-<!--    let valve_status = await response.json();-->
-<!--  return;-->
-<!--  }-->
 
   function area_status1111111(area_id) {
     let area = "area" + area_id;
