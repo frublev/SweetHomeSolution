@@ -17,7 +17,8 @@ import os
 
 from dotenv import load_dotenv
 
-from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time
+from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time, gts
+from .global_var import settings
 from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel, WateringSchemeModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -471,22 +472,31 @@ def req_test():
                 print(f'Next area {g_area.id}')
                 print()
         print(g_start, g_valve.id, g_valves)
+        with Session() as session:
+            print(gts(session))
+        pause.sleep(30)
+
+
+def check_time():
+    while app:
+        print(settings.charts)
         pause.sleep(30)
 
 
 def start_timer():
-    my_thread = Thread(target=req_test, daemon=True)
+    my_thread = Thread(target=check_time, daemon=True)
     my_thread.start()
 
 
 with Session() as session:
-    g_start, g_area, g_valves, g_valve, g_duration = get_start_time(session, g_start, g_area, g_valves, g_valve)
+    settings.charts = gts(session)
+    # g_start, g_area, g_valves, g_valve, g_duration = get_start_time(session, g_start, g_area, g_valves, g_valve)
 
 
 start_timer()
 
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])
-app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])
+app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])  # добавить area
 app.add_url_rule('/irrigation/areas/', view_func=AreaView.as_view('create_area'), methods=['POST'])
 app.add_url_rule('/irrigation/schemes/', view_func=SchemeView.as_view('create_scheme'), methods=['POST'])
 app.add_url_rule('/irrigation/schemes/<int:scheme_id>/', view_func=SchemeView.as_view('edit_scheme'), methods=['PATCH'])

@@ -3,6 +3,7 @@ from datetime import datetime, time, timedelta
 from requests.exceptions import ConnectTimeout, ConnectionError
 from urllib3.exceptions import ProtocolError
 
+from Irrigation.global_var import settings
 from Irrigation.models import WateringModel, ValveModel, WateringSchemeModel, AreaModel
 
 url_ard = 'http://192.168.0.177/'
@@ -49,7 +50,7 @@ def valve_on_off(session, relay, relays_status, timer, token):
 
 
 def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=0):
-    pause_till = start_ + timedelta(seconds=duration_ + 60)
+    pause_till = start_ + timedelta(seconds=duration_+60)
     if len(valves_) > 1:
         i = valves_.index(valve_)
     else:
@@ -78,7 +79,7 @@ def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=
                         start_ = dt0 + timedelta(days=1, seconds=next_start[0])
                         area_ = ar
             valves_ = session.query(ValveModel).filter(ValveModel.area_id == area_.id).all()
-            if pause_till - timedelta(seconds=duration_ + 60) < start_ < pause_till:
+            if pause_till - timedelta(seconds=duration_+60) < start_ < pause_till:
                 start_ = pause_till
             valve_ = valves_[0]
             valves_ = tuple(valves_)
@@ -87,3 +88,28 @@ def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=
     if area_:
         print(f'get_start_time {start_, area_, valves_, valve_, duration_}')
     return start_, area_, valves_, valve_, duration_
+
+
+def gts(session, wr=False):
+    current_datetime = datetime.now()
+    current_date = current_datetime.date()
+    dt0 = datetime.combine(current_date, time(0, 0))
+    areas = session.query(AreaModel).order_by(AreaModel.id).all()
+    ar_start = []
+    start_time = None
+    for ar in areas:
+        dt1 = dt0 + timedelta(seconds=ar.schedule[0])
+        if dt1 < current_datetime:
+            dt1 = dt1 + timedelta(days=1)
+        ar_start.append({'area': ar.id, 'start_time': dt1, 'duration': ar.duration})
+        ar_start = sorted(ar_start, key=lambda x: x['start_time'])
+    if ar_start[0]:
+        start_time = ar_start[0]['start_time']
+        areas = [ar_start[0]['area']]
+    for i in range(1, len(ar_start)):
+        if ar_start[i]['start_time'] <= ar_start[i - 1]['start_time'] + timedelta(seconds=ar_start[i - 1]['duration']):
+            areas.append(ar_start[i]['area'])
+    if wr:
+        settings.charts['start'] = start_time
+        settings.charts['area'] = areas
+    return start_time, areas

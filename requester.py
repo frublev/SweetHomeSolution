@@ -1,6 +1,16 @@
+import os
+
 import requests
 from datetime import datetime, timedelta, date, time
-from Irrigation.views import cook
+
+from dotenv import load_dotenv
+
+
+dotenv_path = os.path.join(os.path.dirname(__file__), 'Irrigation/', '.env')
+print(dotenv_path)
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+cook = os.getenv('COOK')
 
 
 def create_user(user_name, password, phone_num, email):
@@ -52,7 +62,22 @@ def edit_scheme(id_, schedule):
     print(response.json())
 
 
-create_scheme([[10, 45], [16, 30]])
+def edit_unit(id_, hh, mm, unit='area'):
+    t = (hh * 60 + mm) * 60
+    url_flask = 'http://192.168.0.105:5000/irrigation/' + str(id_) + '/'
+    areas = {
+        'schedule': [t],
+        'duration': 300,
+    }
+    response = requests.patch(url_flask, json=areas, cookies={'token': cook})
+    print(response.status_code)
+    print(response.json())
+
+
+edit_unit(1, 16, 45, unit='area')
+
+
+# create_scheme([[10, 45], [16, 30]])
 # create_scheme([[11, 45], [17, 30]])
 # edit_scheme('1', [[10, 45], [16, 30]])
 # edit_scheme('2', [[11, 45], [17, 30]])

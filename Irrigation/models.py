@@ -81,6 +81,8 @@ class AreaModel(Base):
     description = Column(String(1000), nullable=False)
     square = Column(Float, nullable=False)
     creation_time = Column(DateTime, server_default=func.now())
+    schedule = Column(ARRAY(Integer), nullable=True)                # поставить ограничения
+    duration = Column(Integer, nullable=True)                                        # поставить ограничения
     scheme_id = Column(Integer, ForeignKey('schemes.id'))
     scheme = relationship(WateringSchemeModel, lazy='joined')
     status = Column(Boolean, nullable=True)

@@ -1,9 +1,19 @@
+import os
+
 import requests
-from Irrigation.views import cook
+from dotenv import load_dotenv
+
+
+dotenv_path = os.path.join(os.path.dirname(__file__), 'Irrigation/', '.env')
+print(dotenv_path)
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+cook = os.getenv('COOK')
+print(cook)
 
 
 def create_unit(data_, unit):
-    url_flask = 'http://192.168.0.108:5000/irrigation/' + unit + '/'
+    url_flask = 'http://192.168.0.105:5000/irrigation/' + unit + '/'
     response = requests.post(url_flask, json=data_, cookies={'token': cook})
     print(response.status_code)
     print(response.json())
@@ -13,12 +23,16 @@ areas1 = {
     'head': 'Northern square',
     'description': 'North of plot',
     'square': 52.5,
+    'schedule': [15000],
+    'duration': 300,
     'scheme_id': 1
 }
 
 areas2 = {
     'head': 'Southern rectangle',
     'description': 'South of plot',
+    'schedule': [15000],
+    'duration': 360,
     'square': 41.5,
     'scheme_id': 1
 }
@@ -92,4 +106,5 @@ for d in description:
         'area_id': area_id,
         'valve_id': valve_id,
     }
+
     create_unit(sprinklers, 'sprinklers')
