@@ -4,7 +4,8 @@ from requests.exceptions import ConnectTimeout, ConnectionError
 from urllib3.exceptions import ProtocolError
 
 from Irrigation.global_var import settings
-from Irrigation.models import WateringModel, ValveModel, WateringSchemeModel, AreaModel
+from Irrigation.models import WateringModel, ValveModel, AreaModel
+from Irrigation.weather_stat import set_sunrise
 
 url_ard = 'http://192.168.0.177/'
 
@@ -90,6 +91,11 @@ def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=
     return start_, area_, valves_, valve_, duration_
 
 
+def set_duration(sq, jet, v=5.5):
+    duration = sq * v / jet * 60
+    return duration
+
+
 def gts(session, wr=False):
     current_datetime = datetime.now()
     current_date = current_datetime.date()
@@ -98,10 +104,22 @@ def gts(session, wr=False):
     ar_start = []
     start_time = None
     for ar in areas:
-        dt1 = dt0 + timedelta(seconds=ar.schedule[0])
+        if ar.auto:
+            t_delta = timedelta(seconds=set_sunrise())
+            valves_ = session.query(ValveModel).filter(ValveModel.area_id == ar.id).all()
+            j = 0
+            for v in valves_:
+                j += v.jet
+            j = j / len(valves_)
+            duration = set_duration(ar.square, j)
+            print(duration)
+        else:
+            t_delta = timedelta(seconds=ar.schedule[0])
+            duration = ar.duration
+        dt1 = dt0 + t_delta
         if dt1 < current_datetime:
             dt1 = dt1 + timedelta(days=1)
-        ar_start.append({'area': ar.id, 'start_time': dt1, 'duration': ar.duration})
+        ar_start.append({'area': ar.id, 'start_time': dt1, 'duration': duration})
         ar_start = sorted(ar_start, key=lambda x: x['start_time'])
     if ar_start[0]:
         start_time = ar_start[0]['start_time']

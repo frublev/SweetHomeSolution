@@ -4,57 +4,6 @@ import requests
 from requests import get, post, patch, delete
 
 
-def product_create(count):
-    url_django = 'http://127.0.0.1:8000/api/v1/products/'
-    data_ = {
-        "title": f'Title{count}',
-        "description": f'Description{count}'
-    }
-    return post(url_django, data=data_)
-
-
-def product_upd(count):
-    url_django = 'http://127.0.0.1:8000/api/v1/products/' + str(count) + '/'
-    data_ = {
-        "description": f'NewDescription{count}'
-    }
-    return patch(url_django, data=data_)
-
-
-def product_delete(count):
-    url_django = 'http://127.0.0.1:8000/api/v1/products/' + str(count) + '/'
-    return delete(url_django)
-
-
-def product_search(text):
-    url_django = f'http://127.0.0.1:8000/api/v1/products/?search={str(text)}/'
-    return get(url_django)
-
-
-def stock_create(count):
-    url_django = 'http://127.0.0.1:8000/api/v1/stocks/'
-    data_ = {
-        'address': f'address{count}',
-        'positions': [
-            {
-                'product': 1,
-                'quantity': 150
-            }
-        ]
-    }
-    return post(url_django, data=data_)
-
-
-def measurement(sensor_, temperature):
-    url_django = 'http://127.0.0.1:8000/api/measurements/'
-    data_ = {
-        "id_sensor": sensor_,
-        "temperature": temperature
-    }
-    files = {'file': ('syn3.jpg', open('syn3.jpg', 'rb'), 'image/jpg')}
-    return post(url_django, data=data_, files=files)
-
-
 def arduino_test(hl):
     url_ard = 'http://192.168.0.177/' + hl
     response = get(url_ard)
@@ -91,21 +40,9 @@ def edit_valve(id, data_):
 
 def create_unit(data_, unit):
     url_flask = 'http://192.168.0.105:5000/irrigation/' + unit + '/'
-    response = requests.post(url_flask, json=data_, cookies={'token': '67116395-dc55-4cc7-840c-a258f2ac2d28'})
+    response = requests.post(url_flask, json=data_, cookies={'token': '2a648459-5287-4ebb-8bda-709aac4b87bc'})
     print(response.status_code)
     print(response.json())
-
-
-# product_create(9)
-# product_upd(7)
-# product_delete(7)
-# product_search(1)
-# stock_create(2)
-# measurement(18, 25.2)
-
-# arduino_test('F')
-
-# login_test('frublev', '12345678', '+421905069102', 'f.rublev@gmail.com')
 
 
 def create_areas():
@@ -113,16 +50,16 @@ def create_areas():
         'head': 'Northern square',
         'description': 'North of plot',
         'square': 52.5,
-        'scheme_id': 1,
-        'status': True
+        'auto': True,
+        'on_off': True
     }
 
     area2 = {
         'head': 'Southern rectangle',
         'description': 'South of plot',
         'square': 41.5,
-        'scheme_id': 2,
-        'status': True
+        'auto': True,
+        'on_off': True
     }
 
     areas = [area1, area2]
@@ -199,4 +136,6 @@ def create_sprinklers():
         create_unit(sprinklers, 'sprinklers')
 
 
-create_areas()
+# create_areas()
+create_valves()
+create_sprinklers()

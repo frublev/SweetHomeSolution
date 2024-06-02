@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 
 from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time, gts
 from .global_var import settings
-from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel, WateringSchemeModel
+from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 print(dotenv_path)
@@ -152,8 +152,8 @@ def irrigation():
             layout = []
             for ar in areas:
                 area = ar.to_dict()
-                area['volume_auto'] = ar.scheme.volume_auto
-                area['schedule_program'] = ar.scheme.schedule_program
+                # area['volume_auto'] = ar.scheme.volume_auto
+                # area['schedule_program'] = ar.scheme.schedule_program
                 layout.append(area)
     return render_template(
         'irrigation.html',
@@ -282,6 +282,10 @@ class AreaView(MethodView):
                     'Valves quantity': valves_count,
                     'Sprinklers quantity': sprinklers
                 }
+                settings = {
+                    'start_time': area.schedule,
+                    'duration': area.duration
+                }
 
                 relays_status = request_pin_status(url_ard)
                 print(relays_status)
@@ -315,6 +319,7 @@ class AreaView(MethodView):
                                                          head=area.head,
                                                          active_class=active_class,
                                                          description=description,
+                                                         settings=settings,
                                                          valves=valves,
                                                          valves_str=valves_str,
                                                          active_valve=active_valve,
@@ -352,7 +357,7 @@ class AreaView(MethodView):
 
 
 @app.route('/valve_manual', methods=['POST'])
-def valve_manual(timer='0030'):
+def valve_manual(timer='1800'):
     relays_status = request_pin_status(url_ard)
     if relays_status == 'dddd':
         js_json = {'fn': 'dddd'}
@@ -420,36 +425,6 @@ class SprinklerView(MethodView):
                 return jsonify(new_sprinkler.to_dict())
 
 
-class SchemeView(MethodView):
-    def post(self):
-        scheme_data = request.json
-        with Session() as session:
-            token = check_token(session)
-            if token:
-                new_scheme = WateringSchemeModel(**scheme_data)
-                new_scheme.user_id = token.user.id
-                session.add(new_scheme)
-                session.commit()
-                return jsonify(new_scheme.to_dict())
-
-    def patch(self, scheme_id: int):
-        global g_start
-        global g_area
-        global g_valves
-        global g_valve
-        global g_duration
-        scheme_data = request.json
-        with Session() as session:
-            token = check_token(session)
-            if token:
-                session.query(WateringSchemeModel).filter(WateringSchemeModel.id == scheme_id).update(scheme_data)
-                session.commit()
-                upd_scheme = session.query(WateringSchemeModel).get(scheme_id)
-                g_start, g_area, g_valves, g_valve, g_duration = get_start_time(
-                    session, g_start, g_area, g_valves, g_valve)
-                return jsonify(upd_scheme.to_dict())
-
-
 def req_test():
     global g_start
     global g_area
@@ -490,7 +465,6 @@ def start_timer():
 
 with Session() as session:
     settings.charts = gts(session)
-    # g_start, g_area, g_valves, g_valve, g_duration = get_start_time(session, g_start, g_area, g_valves, g_valve)
 
 
 start_timer()
@@ -498,8 +472,6 @@ start_timer()
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])  # добавить area
 app.add_url_rule('/irrigation/areas/', view_func=AreaView.as_view('create_area'), methods=['POST'])
-app.add_url_rule('/irrigation/schemes/', view_func=SchemeView.as_view('create_scheme'), methods=['POST'])
-app.add_url_rule('/irrigation/schemes/<int:scheme_id>/', view_func=SchemeView.as_view('edit_scheme'), methods=['PATCH'])
 app.add_url_rule('/irrigation/valves/', view_func=ValveView.as_view('create_valve'), methods=['POST'])
 app.add_url_rule('/irrigation/sprinklers/', view_func=SprinklerView.as_view('create_sprinkler'), methods=['POST'])
 app.add_url_rule('/create_user/', view_func=UserView.as_view('create_user'), methods=['POST'])

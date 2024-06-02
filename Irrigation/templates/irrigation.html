@@ -9,8 +9,8 @@
     <tr>
       <th scope="col">#</th>
       <th scope="col">Area</th>
-      <th scope="col">On/Off</th>
-      <th scope="col">Start time</th>
+      <th scope="col">Status</th>
+      <th scope="col">Auto</th>
       <th scope="col">Frequency</th>
       <th scope="col">Duration</th>
     </tr>
@@ -27,12 +27,25 @@
                  type="checkbox"
                  role="switch"
                  name="area_status"
-                 id="area{{ area['id'] }}"
-                 onclick="area_status('{{ area.id }}')"
-                 value="{{ area['status'] }}">
-          <label id = "check_area{{ area['id'] }}" class="form-check-label" for="area{{ area['id'] }}">checked</label>
+                 id="area_on_off{{ area['id'] }}"
+                 onclick="area_status('{{ area.id }}', 'on_off')"
+                 value="{{ area['on_off'] }}">
+          <label id = "check_area_on_off{{ area['id'] }}" class="form-check-label" for="area_on_off{{ area['id'] }}">checked</label>
         </div>
       </td>
+      <td>
+        <div class="form-check form-switch">
+          <input class="form-check-input"
+                 type="checkbox"
+                 role="switch"
+                 name="area_auto"
+                 id="area_auto{{ area['id'] }}"
+                 onclick="area_status('{{ area.id }}', 'auto')"
+                 value="{{ area['auto'] }}">
+          <label id = "check_area_auto{{ area['id'] }}" class="form-check-label" for="area_auto{{ area['id'] }}">checked</label>
+        </div>
+      </td>
+
     </tr>
   {% endfor %}
 </table>
@@ -40,31 +53,38 @@
 <div id="layout" style="display: none;">{{ layout }}</div>
 
 <script>
-  let elements = document.getElementsByName("area_status");
-  for (let i = 0; i < elements.length; i++) {
-    let lab = 'check_' + elements[i].id + '';
-    if (elements[i].value == "True") {
-      elements[i].checked = true;
-      document.getElementById(lab).innerText = 'On';
-    }
-    else {
-      elements[i].checked = false;
-      document.getElementById(lab).innerText = 'Off';
+  radio_check('area_status');
+  radio_check('area_auto');
+
+  function radio_check(elbyname) {
+    let elements = document.getElementsByName(elbyname);
+    for (let i = 0; i < elements.length; i++) {
+      let lab = 'check_' + elements[i].id + '';
+      if (elements[i].value == "True") {
+        elements[i].checked = true;
+        document.getElementById(lab).innerText = 'On';
+      }
+      else {
+        elements[i].checked = false;
+        document.getElementById(lab).innerText = 'Off';
+      }
     }
   }
 
-  const area_status = async (area_ = '') => {
+  const area_status = async (area_ = '', radio = '') => {
     let url = '/irrigation/' + area_ + '/';
-    let area_id = 'area' + area_;
+    let area_id = 'area_' + radio + area_;
     let status = document.getElementById(area_id).value;
-    let lab_ = 'check_area' + area_;
+    let lab_ = 'check_area_' + radio + area_;
     let data = {}
+
     if (status == "True") {
-      data = {status: false};
+      data[radio] = false;
     }
     else {
-      data = {status: true};
+      data[radio] = true;
     }
+
     const response = await fetch(url, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
@@ -80,13 +100,6 @@
       document.getElementById(lab_).innerText = "Off";
     }
     return;
-  }
-
-  function area_status1111111(area_id) {
-    let area = "area" + area_id;
-    let id_ = document.getElementById(area).checked;
-    let status_ = document.getElementById(area).value;
-    if (id_ == true) {alert(status_)} else {alert("off")}
   }
 </script>
 

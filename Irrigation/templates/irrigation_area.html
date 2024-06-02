@@ -8,48 +8,103 @@
   <div class="nav nav-tabs" id="nav-tab" role="tablist">
     <button class="{{ active_class[0] }}" id="nav-watering-tab" data-bs-toggle="tab" data-bs-target="#nav-watering" type="button" role="tab" aria-controls="nav-watering" aria-selected="true">Watering</button>
     <button class="nav-link" id="nav-description-tab" data-bs-toggle="tab" data-bs-target="#nav-description" type="button" role="tab" aria-controls="nav-description" aria-selected="false">Description</button>
+    <button class="nav-link" id="nav-settings-tab" data-bs-toggle="tab" data-bs-target="#nav-settings" type="button" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</button>
     <button class="{{ active_class[2] }}" id="nav-valves-tab" data-bs-toggle="tab" data-bs-target="#nav-valves" type="button" role="tab" aria-controls="nav-valves" aria-selected="false">Valves</button>
   </div>
 </nav>
 <div class="tab-content" id="nav-tabContent">
   <div class="{{ active_class[1] }}" id="nav-watering" role="tabpanel" aria-labelledby="nav-watering-tab" tabindex="0">
-    <table class="table table-borderless">
-      <tbody>
-        <tr>
-          <td>Last finish:</td>
-          <td>5 aug 17:22</td>
-        </tr>
-        <tr>
-          <td>Watering volume:</td>
-          <td>250 l</td>
-        </tr>
-        <tr>
-          <td>Precipitation:</td>
-          <td>10 mm</td>
-        </tr>
-        <tr>
-          <td>Total watering:</td>
-          <td>50 mm</td>
-        </tr>
-        <tr>
-          <td>Soil moisture:</td>
-          <td>20 %</td>
-        </tr>
-        <tr>
-          <td>Next start:</td>
-          <td>6 aug 17:15</td>
-        </tr>
-        <tr>
-          <td>Set duration:</td>
-          <td>05:37</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <table class="table table-borderless">
+            <tbody>
+              <tr>
+                <td>Last finish:</td>
+                <td>5 aug 17:22</td>
+              </tr>
+              <tr>
+                <td>Watering volume:</td>
+                <td>250 l</td>
+              </tr>
+              <tr>
+                <td>Precipitation:</td>
+                <td>10 mm</td>
+              </tr>
+              <tr>
+                <td>Total watering:</td>
+                <td>50 mm</td>
+              </tr>
+              <tr>
+                <td>Soil moisture:</td>
+                <td>20 %</td>
+              </tr>
+              <tr>
+                <td>Next start:</td>
+                <td>6 aug 17:15</td>
+              </tr>
+              <tr>
+                <td>Set duration:</td>
+                <td>05:37</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col">
+          <table class="table table-borderless">
+            <thead>
+              <tr>
+                <th scope="col">Set</th>
+                <th scope="col">Start time</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Frequency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Auto</td>
+                <td>{{ settings[start_time] }}</td>
+                <td>{{ settings[duration] }}</td>
+              </tr>
+              <tr>
+                <td>Morning watering</td>
+                <td>{{ settings[start_time] }}</td>
+                <td>{{ settings[duration] }}</td>
+              </tr>
+              <tr>
+                <td>Evening watering</td>
+                <td>{{ settings[start_time] }}</td>
+                <td>{{ settings[duration] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="tab-pane fade" id="nav-description" role="tabpanel" aria-labelledby="nav-description-tab" tabindex="0">
     <table class="table table-borderless">
       <tbody>
       {% for item in description.items() %}
+        <tr>
+          <td>{{ item[0] }}</td>
+          <td>{{ item[1] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+    <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab" tabindex="0">
+    <table class="table table-borderless">
+      <thead>
+        <tr>
+          <th scope="col">Set</th>
+          <th scope="col">Morning Watering</th>
+          <th scope="col">Evening Watering</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in settings.items() %}
         <tr>
           <td>{{ item[0] }}</td>
           <td>{{ item[1] }}</td>
