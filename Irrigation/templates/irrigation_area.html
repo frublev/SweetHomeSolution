@@ -95,21 +95,26 @@
     </table>
   </div>
     <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab" tabindex="0">
-    <table class="table table-borderless">
-      <thead>
-        <tr>
-          <th scope="col">Set</th>
-          <th scope="col">Morning Watering</th>
-          <th scope="col">Evening Watering</th>
-        </tr>
-      </thead>
+    <table class="table table-borderless align-middle">
       <tbody>
-      {% for item in settings.items() %}
         <tr>
-          <td>{{ item[0] }}</td>
-          <td>{{ item[1] }}</td>
+          <td>Start time</td>
+          <td><span id="start_time_h">{{ settings['set_start_time_h'] }}</span>:<span id="start_time_m">{{ settings['set_start_time_m'] }}</span></td>
+          <td><input id="area_schedule{{ id }}" type="range" class="form-range" min="0" max="48"></td>
+          <td>
+            <button onclick="area_status('{{ id }}', 'schedule')" class="btn btn-success">Set</button>
+          </td>
         </tr>
-      {% endfor %}
+      </tbody>
+      <tbody>
+        <tr>
+          <td>Duration</td>
+          <td><span id="duration_m">{{ settings['duration_m'] }}</span>:<span id="duration_s">{{ settings['duration_s'] }}</span></td>
+          <td><input id="area_duration{{ id }}" type="range" class="form-range" min="0" max="60"></td>
+          <td>
+            <button onclick="area_status('{{ id }}', 'duration')" class="btn btn-success">Set</button>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -145,6 +150,46 @@
 <div id="active_valve" style="display: none;">{{ active_valve }}</div>
 <div id="relay_status" style="display: none;">{{ rs }}</div>
 <div id="start_time" style="display: none;">{{ start_time }}</div>
+<div id="aria_id" style="display: none;">{{ id }}</div>
+
+<script src="{{ url_for('static', filename='aria_model_patch.js') }}"></script>
+
+<script>
+  let area_schedule = "area_schedule" + document.getElementById("aria_id").innerHTML;
+  let area_duration = "area_duration" + document.getElementById("aria_id").innerHTML;
+  let range_set_start = document.getElementById(area_schedule);
+  let range_duration = document.getElementById(area_duration);
+
+  let start_time_h = document.getElementById("start_time_h");
+  let start_time_m = document.getElementById("start_time_m");
+
+  let duration_m = document.getElementById("duration_m");
+  let duration_s = document.getElementById("duration_s");
+
+  range_set_start.value = start_time_h.innerHTML * 2 + start_time_m.innerHTML / 30;
+  range_duration.value = duration_m.innerHTML * 2 + duration_s.innerHTML / 30;
+
+  updateTime(range_set_start, start_time_h, start_time_m);
+  updateTime(range_duration, duration_m, duration_s);
+
+  function updateTime(range, t1, t2) {
+    let t = range.value;
+    t1.textContent = Math.floor(t / 2);
+    if (Math.floor(t / 2) < 10) {
+    t1.textContent = "0" + Math.floor(t / 2);
+    };
+    t2.textContent = t % 2 * 30;
+    if (t % 2 * 30 != 30) {
+    t2.textContent = "00";
+    };
+  };
+  range_set_start.addEventListener('input', function () {
+    updateTime(range_set_start, start_time_h, start_time_m);
+  });
+  range_duration.addEventListener('input', function () {
+    updateTime(range_duration, duration_m, duration_s);
+  });
+</script>
 
 <script>
   let rs = document.getElementById("relay_status").innerHTML;
@@ -152,10 +197,10 @@
   let active_valve = document.getElementById("active_valve").innerHTML;
   rs = rs.slice(0, 4);
   let on_off = false;
-  if (rs != "ffff") {
+  if (rs != "ffff" && rs != "dddd") {
+    alert(rs);
     watering(rs, active_valve);
   }
-
 
   async function watering(r_status, rl) {
     if (r_status != "ffff") {

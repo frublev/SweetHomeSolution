@@ -17,8 +17,8 @@ import os
 
 from dotenv import load_dotenv
 
-from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time, gts
 from .global_var import settings
+from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time, gts
 from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -282,10 +282,20 @@ class AreaView(MethodView):
                     'Valves quantity': valves_count,
                     'Sprinklers quantity': sprinklers
                 }
-                settings = {
-                    'start_time': area.schedule,
-                    'duration': area.duration
-                }
+                try:
+                    settings = {
+                        'set_start_time_h': area.schedule[0] // 2,
+                        'set_start_time_m': area.schedule[0] % 2 * 30,
+                        'duration_m': area.duration[0] // 60,
+                        'duration_s': area.duration[0] % 60 * 30
+                    }
+                except TypeError:
+                    settings = {
+                        'set_start_time_h': 24,
+                        'set_start_time_m': 0,
+                        'duration_m': 0,
+                        'duration_s': 0
+                    }
 
                 relays_status = request_pin_status(url_ard)
                 print(relays_status)
@@ -316,6 +326,7 @@ class AreaView(MethodView):
                     valves_str += str(valve['relay']) + ';'
 
                 response = make_response(render_template('irrigation_area.html',
+                                                         id=area.id,
                                                          head=area.head,
                                                          active_class=active_class,
                                                          description=description,
@@ -454,7 +465,9 @@ def req_test():
 
 def check_time():
     while app:
+        print(datetime.now())
         print(settings.charts)
+        print(request_pin_status())
         pause.sleep(30)
 
 

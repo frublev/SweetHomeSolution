@@ -26,7 +26,7 @@ def login_test(user_name, password, phone_num, email):
 
 def create_area(data_):
     url_flask = 'http://192.168.0.104:5000/irrigation/area/'
-    response = requests.post(url_flask, json=data_, cookies={'token': 'bde14bfe-e862-4719-bf24-f8276ce2e59c'})
+    response = requests.post(url_flask, json=data_, cookies={'token': 'f57022f2-169f-4752-bf02-a9520f4d3009'})
     print(response.status_code)
     print(response.json())
 
@@ -40,7 +40,7 @@ def edit_valve(id, data_):
 
 def create_unit(data_, unit):
     url_flask = 'http://192.168.0.105:5000/irrigation/' + unit + '/'
-    response = requests.post(url_flask, json=data_, cookies={'token': '2a648459-5287-4ebb-8bda-709aac4b87bc'})
+    response = requests.post(url_flask, json=data_, cookies={'token': 'f57022f2-169f-4752-bf02-a9520f4d3009'})
     print(response.status_code)
     print(response.json())
 
@@ -51,7 +51,9 @@ def create_areas():
         'description': 'North of plot',
         'square': 52.5,
         'auto': True,
-        'on_off': True
+        'on_off': True,
+        'schedule': [43200],
+        'duration': [900]
     }
 
     area2 = {
@@ -59,7 +61,9 @@ def create_areas():
         'description': 'South of plot',
         'square': 41.5,
         'auto': True,
-        'on_off': True
+        'on_off': True,
+        'schedule': [43200],
+        'duration': [600]
     }
 
     areas = [area1, area2]
@@ -136,6 +140,6 @@ def create_sprinklers():
         create_unit(sprinklers, 'sprinklers')
 
 
-# create_areas()
-create_valves()
-create_sprinklers()
+create_areas()
+# create_valves()
+# create_sprinklers()

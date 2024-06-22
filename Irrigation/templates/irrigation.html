@@ -52,9 +52,12 @@
 
 <div id="layout" style="display: none;">{{ layout }}</div>
 
-<!--<script>-->
-<!--  radio_check('area_status');-->
-<!--  radio_check('area_auto');-->
+<script src="{{ url_for('static', filename='aria_model_patch.js') }}"></script>
+
+<script>
+  radio_check('area_status');
+  radio_check('area_auto');
+</script>
 
 <!--  function radio_check(elbyname) {-->
 <!--    let elements = document.getElementsByName(elbyname);-->
@@ -91,16 +94,16 @@
 <!--      body: JSON.stringify(data)-->
 <!--    });-->
 <!--    let area_status = await response.json();-->
-<!--    if (area_status.status == true) {-->
+<!--    if (typeof area_status[radio] == "boolean" && area_status[radio] == true) {-->
 <!--      document.getElementById(area_id).value = "True";-->
 <!--      document.getElementById(lab_).innerText = "On";-->
 <!--    }-->
-<!--    else {-->
+<!--    else if (typeof area_status[radio] == "boolean" && area_status[radio] == false) {-->
 <!--      document.getElementById(area_id).value = "False";-->
 <!--      document.getElementById(lab_).innerText = "Off";-->
 <!--    }-->
 <!--    return;-->
 <!--  }-->
-<!--</script>-->
+
 
 {% endblock %}

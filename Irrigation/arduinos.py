@@ -10,7 +10,7 @@ from Irrigation.weather_stat import set_sunrise
 url_ard = 'http://192.168.0.177/'
 
 
-def request_pin_status(url):
+def request_pin_status(url='http://192.168.0.177/'):
     try:
         response_ard = get(url, timeout=20)
         if response_ard.status_code == 200:
