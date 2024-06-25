@@ -31,8 +31,13 @@ const area_status = async (area_ = '', radio = '') => {
     data[radio] = status;
   }
 
-  if (radio == "schedule" || radio == "duration") {
-    data[radio] = [Number(status)];
+  if (radio == "schedule") {
+    data[radio] = [Number(status) * 1800];
+    alert(data[radio])
+  }
+
+  if (radio == "duration") {
+    data[radio] = [Number(status) * 30];
     alert(data[radio])
   }
 

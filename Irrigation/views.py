@@ -284,10 +284,10 @@ class AreaView(MethodView):
                 }
                 try:
                     settings = {
-                        'set_start_time_h': area.schedule[0] // 2,
-                        'set_start_time_m': area.schedule[0] % 2 * 30,
-                        'duration_m': area.duration[0] // 60,
-                        'duration_s': area.duration[0] % 60 * 30
+                        'set_start_time_h': (area.schedule[0] / 1800) // 2,
+                        'set_start_time_m': (area.schedule[0] / 1800) % 2 * 30,
+                        'duration_m': (area.duration[0] / 30) // 60,
+                        'duration_s': (area.duration[0] / 30) % 60 * 30
                     }
                 except TypeError:
                     settings = {
