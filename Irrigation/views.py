@@ -305,7 +305,7 @@ class AreaView(MethodView):
                 active_valve = None
                 active_class = ["nav-link active", "tab-pane fade show active", "nav-link", "tab-pane fade"]
                 for valve_ in valves_:
-                    valve = valve_.to_dict_short()
+                    valve = valve_.to_dict_full()
                     valve['relay'] = valve_.relay
                     if relays_status[valve_.relay - 1] == 'n':
                         valve['button'] = ['On', 'btn btn-danger']
@@ -328,6 +328,8 @@ class AreaView(MethodView):
                 response = make_response(render_template('irrigation_area.html',
                                                          id=area.id,
                                                          head=area.head,
+                                                         auto=area.auto,
+                                                         on_off=area.on_off,
                                                          active_class=active_class,
                                                          description=description,
                                                          settings=settings,

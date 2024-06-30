@@ -115,7 +115,7 @@ def gts(session, wr=False):
             print(duration)
         else:
             t_delta = timedelta(seconds=ar.schedule[0])
-            duration = ar.duration
+            duration = ar.duration[0]
         dt1 = dt0 + t_delta
         if dt1 < current_datetime:
             dt1 = dt1 + timedelta(days=1)

@@ -8,7 +8,6 @@
   <div class="nav nav-tabs" id="nav-tab" role="tablist">
     <button class="{{ active_class[0] }}" id="nav-watering-tab" data-bs-toggle="tab" data-bs-target="#nav-watering" type="button" role="tab" aria-controls="nav-watering" aria-selected="true">Watering</button>
     <button class="nav-link" id="nav-description-tab" data-bs-toggle="tab" data-bs-target="#nav-description" type="button" role="tab" aria-controls="nav-description" aria-selected="false">Description</button>
-    <button class="nav-link" id="nav-settings-tab" data-bs-toggle="tab" data-bs-target="#nav-settings" type="button" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</button>
     <button class="{{ active_class[2] }}" id="nav-valves-tab" data-bs-toggle="tab" data-bs-target="#nav-valves" type="button" role="tab" aria-controls="nav-valves" aria-selected="false">Valves</button>
   </div>
 </nav>
@@ -51,30 +50,53 @@
           </table>
         </div>
         <div class="col">
-          <table class="table table-borderless">
-            <thead>
-              <tr>
-                <th scope="col">Set</th>
-                <th scope="col">Start time</th>
-                <th scope="col">Duration</th>
-                <th scope="col">Frequency</th>
-              </tr>
-            </thead>
+          <table class="table table-borderless align-middle">
             <tbody>
               <tr>
+                <td>Turned</td>
+                <td>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           role="switch"
+                           name="area_status"
+                           id="area_on_off{{ id }}"
+                           onclick="area_status('{{ id }}', 'on_off')"
+                           value="{{ on_off }}">
+                    <label id = "check_area_on_off{{ id }}" class="form-check-label" for="area_on_off{{ id }}">checked</label>
+                  </div>
+                </td>
+              </tr>
+              <tr>
                 <td>Auto</td>
-                <td>{{ settings[start_time] }}</td>
-                <td>{{ settings[duration] }}</td>
+                <td>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           role="switch"
+                           name="area_auto"
+                           id="area_auto{{ id }}"
+                           onclick="area_status('{{ id }}', 'auto')"
+                           value="{{ auto }}">
+                    <label id = "check_area_auto{{ id }}" class="form-check-label" for="area_auto{{ id }}">checked</label>
+                  </div>
+                </td>
               </tr>
               <tr>
-                <td>Morning watering</td>
-                <td>{{ settings[start_time] }}</td>
-                <td>{{ settings[duration] }}</td>
+                <td>Start time</td>
+                <td><span id="start_time_h">{{ settings['set_start_time_h'] }}</span>:<span id="start_time_m">{{ settings['set_start_time_m'] }}</span></td>
+                <td><input id="area_schedule{{ id }}" type="range" class="form-range" min="0" max="48"></td>
+                <td>
+                  <button onclick="area_status('{{ id }}', 'schedule')" class="btn btn-success">Set</button>
+                </td>
               </tr>
               <tr>
-                <td>Evening watering</td>
-                <td>{{ settings[start_time] }}</td>
-                <td>{{ settings[duration] }}</td>
+                <td>Duration</td>
+                <td><span id="duration_m">{{ settings['duration_m'] }}</span>:<span id="duration_s">{{ settings['duration_s'] }}</span></td>
+                <td><input id="area_duration{{ id }}" type="range" class="form-range" min="0" max="60"></td>
+                <td>
+                  <button onclick="area_status('{{ id }}', 'duration')" class="btn btn-success">Set</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -94,30 +116,6 @@
       </tbody>
     </table>
   </div>
-    <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab" tabindex="0">
-    <table class="table table-borderless align-middle">
-      <tbody>
-        <tr>
-          <td>Start time</td>
-          <td><span id="start_time_h">{{ settings['set_start_time_h'] }}</span>:<span id="start_time_m">{{ settings['set_start_time_m'] }}</span></td>
-          <td><input id="area_schedule{{ id }}" type="range" class="form-range" min="0" max="48"></td>
-          <td>
-            <button onclick="area_status('{{ id }}', 'schedule')" class="btn btn-success">Set</button>
-          </td>
-        </tr>
-      </tbody>
-      <tbody>
-        <tr>
-          <td>Duration</td>
-          <td><span id="duration_m">{{ settings['duration_m'] }}</span>:<span id="duration_s">{{ settings['duration_s'] }}</span></td>
-          <td><input id="area_duration{{ id }}" type="range" class="form-range" min="0" max="60"></td>
-          <td>
-            <button onclick="area_status('{{ id }}', 'duration')" class="btn btn-success">Set</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
   <div class="{{ active_class[3] }}" id="nav-valves" role="tabpanel" aria-labelledby="nav-valves-tab" tabindex="0">
     <table class="table table-borderless">
       <thead>
@@ -131,7 +129,7 @@
       <tbody>
       {% for unit in valves %}
         <tr>
-          <td>{{ unit['head'] }}</td>
+          <td>{{ unit['id'] }}</td>
           <td>{{ unit['model'] }}</td>
           <td id="jet{{ unit['relay'] }}">{{ unit['jet'] }}</td>
           <td>
@@ -155,6 +153,9 @@
 <script src="{{ url_for('static', filename='aria_model_patch.js') }}"></script>
 
 <script>
+  radio_check('area_status');
+  radio_check('area_auto');
+
   let area_schedule = "area_schedule" + document.getElementById("aria_id").innerHTML;
   let area_duration = "area_duration" + document.getElementById("aria_id").innerHTML;
   let range_set_start = document.getElementById(area_schedule);
