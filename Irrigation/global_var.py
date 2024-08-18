@@ -1,15 +1,15 @@
 class GlobalVar:
     def __init__(self):
-        self._charts = {'start': 0, 'area': []}
+        self._charts = {'start': 0, 'area': [], 'durations': []}
 
     @property
     def charts(self):
-        print('Произошел запрос переменной')
+        print('Variable requested', self._charts)
         return self._charts
 
     @charts.setter
     def charts(self, value):
-        print('Произошло изменение переменной')
+        print('Variable changed', self._charts)
         self._charts = value
 
 

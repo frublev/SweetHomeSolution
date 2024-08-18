@@ -30,14 +30,17 @@ def request_pin_status(url='http://192.168.0.177/'):
     return response_ard
 
 
-def valve_on_off(session, relay, relays_status, timer, token):
+def valve_on_off(session, relay, relays_status, timer, token=None):
     pin = 7 - relay + 1
     start_time = None
     if relays_status[relay - 1] == 'f':
         response = get(url_ard + f'digital_pin={pin}&timer={timer}&pin_high')
         if response.status_code == 200:
             new_watering = WateringModel()
-            new_watering.user_id = token.user.id
+            if token:
+                new_watering.user_id = token.user.id
+            else:
+                new_watering.user_id = 1
             new_watering.creation_time = datetime.now()
             start_time = new_watering.creation_time
             valve = session.query(ValveModel).filter(ValveModel.relay == relay).first()
@@ -50,62 +53,66 @@ def valve_on_off(session, relay, relays_status, timer, token):
     return response, start_time
 
 
-def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=0):
-    pause_till = start_ + timedelta(seconds=duration_+60)
-    if len(valves_) > 1:
-        i = valves_.index(valve_)
-    else:
-        i = 100
-    if i + 1 < len(valves_):
-        start_ = pause_till
-        valve_ = valves_[i + 1]
-    else:
-        start_ = datetime(2021, 1, 1)
-        current_datetime = datetime.now()
-        current_date = current_datetime.date()
-        dt0 = datetime.combine(current_date, time(0, 0))
-        areas = session.query(AreaModel).order_by(AreaModel.id).all()
-        if areas:
-            for ar in areas:
-                next_start = ar.scheme.schedule
-                next_start.sort()
-                for ns in next_start:
-                    dt1 = dt0 + timedelta(seconds=ns)
-                    if dt1 > current_datetime > start_ or start_ > dt1 > current_datetime:
-                        start_ = dt1
-                        area_ = ar
-                        break
-                else:
-                    if (dt0 + timedelta(days=1, seconds=next_start[0])) < start_ or start_ < dt0:
-                        start_ = dt0 + timedelta(days=1, seconds=next_start[0])
-                        area_ = ar
-            valves_ = session.query(ValveModel).filter(ValveModel.area_id == area_.id).all()
-            if pause_till - timedelta(seconds=duration_+60) < start_ < pause_till:
-                start_ = pause_till
-            valve_ = valves_[0]
-            valves_ = tuple(valves_)
-        else:
-            start_, area_, valves_, valve_, duration_ = datetime(2021, 1, 1), None, (), 0, 0
-    if area_:
-        print(f'get_start_time {start_, area_, valves_, valve_, duration_}')
-    return start_, area_, valves_, valve_, duration_
+# def get_start_time(session, start_, area_=None, valves_=(), valve_=0, duration_=0):
+#     pause_till = start_ + timedelta(seconds=duration_+60)
+#     if len(valves_) > 1:
+#         i = valves_.index(valve_)
+#     else:
+#         i = 100
+#     if i + 1 < len(valves_):
+#         start_ = pause_till
+#         valve_ = valves_[i + 1]
+#     else:
+#         start_ = datetime(2021, 1, 1)
+#         current_datetime = datetime.now()
+#         current_date = current_datetime.date()
+#         dt0 = datetime.combine(current_date, time(0, 0))
+#         areas = session.query(AreaModel).order_by(AreaModel.id).all()
+#         if areas:
+#             for ar in areas:
+#                 next_start = ar.scheme.schedule
+#                 next_start.sort()
+#                 for ns in next_start:
+#                     dt1 = dt0 + timedelta(seconds=ns)
+#                     if dt1 > current_datetime > start_ or start_ > dt1 > current_datetime:
+#                         start_ = dt1
+#                         area_ = ar
+#                         break
+#                 else:
+#                     if (dt0 + timedelta(days=1, seconds=next_start[0])) < start_ or start_ < dt0:
+#                         start_ = dt0 + timedelta(days=1, seconds=next_start[0])
+#                         area_ = ar
+#             valves_ = session.query(ValveModel).filter(ValveModel.area_id == area_.id).all()
+#             if pause_till - timedelta(seconds=duration_+60) < start_ < pause_till:
+#                 start_ = pause_till
+#             valve_ = valves_[0]
+#             valves_ = tuple(valves_)
+#         else:
+#             start_, area_, valves_, valve_, duration_ = datetime(2021, 1, 1), None, (), 0, 0
+#     if area_:
+#         print(f'get_start_time {start_, area_, valves_, valve_, duration_}')
+#     return start_, area_, valves_, valve_, duration_
 
 
 def set_duration(sq, jet, v=5.5):
     duration = sq * v / jet * 60
+    duration = round(duration, 0)
     return duration
 
 
-def gts(session, wr=False):
+def gts(session):
     current_datetime = datetime.now()
     current_date = current_datetime.date()
     dt0 = datetime.combine(current_date, time(0, 0))
     areas = session.query(AreaModel).order_by(AreaModel.id).all()
+    durations = []
     ar_start = []
     start_time = None
     for ar in areas:
         if ar.auto:
-            t_delta = timedelta(seconds=set_sunrise())
+            t_delta = timedelta(seconds=set_sunrise(0)[0])
+            if dt0 + t_delta < current_datetime:
+                t_delta = timedelta(seconds=set_sunrise(1)[0])
             valves_ = session.query(ValveModel).filter(ValveModel.area_id == ar.id).all()
             j = 0
             for v in valves_:
@@ -124,10 +131,9 @@ def gts(session, wr=False):
     if ar_start[0]:
         start_time = ar_start[0]['start_time']
         areas = [ar_start[0]['area']]
+        durations = [ar_start[0]['duration']]
     for i in range(1, len(ar_start)):
         if ar_start[i]['start_time'] <= ar_start[i - 1]['start_time'] + timedelta(seconds=ar_start[i - 1]['duration']):
             areas.append(ar_start[i]['area'])
-    if wr:
-        settings.charts['start'] = start_time
-        settings.charts['area'] = areas
-    return start_time, areas
+            durations.append(ar_start[i]['duration'])
+    return start_time, areas, durations

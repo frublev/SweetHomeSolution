@@ -18,7 +18,8 @@ import os
 from dotenv import load_dotenv
 
 from .global_var import settings
-from .arduinos import request_pin_status, url_ard, valve_on_off, get_start_time, gts
+from .arduinos import request_pin_status, url_ard, valve_on_off, gts
+from .weather_stat import get_forecast, set_sunrise, COORD
 from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -366,6 +367,7 @@ class AreaView(MethodView):
                 session.query(AreaModel).filter(AreaModel.id == area_id).update(area_data)
                 session.commit()
                 upd_area = session.query(AreaModel).get(area_id)
+                settings.charts = gts(session)
                 return jsonify(upd_area.to_dict())
 
 
@@ -438,39 +440,67 @@ class SprinklerView(MethodView):
                 return jsonify(new_sprinkler.to_dict())
 
 
-def req_test():
-    global g_start
-    global g_area
-    global g_valves
-    global g_valve
-    global g_duration
-    while app:
-        if datetime.now() >= g_start:
-            with Session() as session:
-                print(f'Current time: {datetime.now()}')
-                pin_status = request_pin_status(url_ard)
-                print(f'Pin status: {pin_status}')
-                print(f'Start time: {g_start}')
-                g_duration = g_area.scheme.volume / len(g_valves) / g_valve.jet * 60
-                print(f'Duration {g_duration}')
-                print(f'Starting area {g_area.id}, valve {g_valve.id}')
-                g_start, g_area, g_valves, g_valve, g_duration = get_start_time(
-                    session, g_start, g_area, g_valves, g_valve, g_duration)
-                print(f'Next time {g_start}')
-                print(f'Next area {g_area.id}')
-                print()
-        print(g_start, g_valve.id, g_valves)
-        with Session() as session:
-            print(gts(session))
-        pause.sleep(30)
+# def req_test():
+#     global g_start
+#     global g_area
+#     global g_valves
+#     global g_valve
+#     global g_duration
+#     while app:
+#         if datetime.now() >= g_start:
+#             with Session() as session:
+#                 print(f'Current time: {datetime.now()}')
+#                 pin_status = request_pin_status(url_ard)
+#                 print(f'Pin status: {pin_status}')
+#                 print(f'Start time: {g_start}')
+#                 g_duration = g_area.scheme.volume / len(g_valves) / g_valve.jet * 60
+#                 print(f'Duration {g_duration}')
+#                 print(f'Starting area {g_area.id}, valve {g_valve.id}')
+#                 g_start, g_area, g_valves, g_valve, g_duration = get_start_time(
+#                     session, g_start, g_area, g_valves, g_valve, g_duration)
+#                 print(f'Next time {g_start}')
+#                 print(f'Next area {g_area.id}')
+#                 print()
+#         print(g_start, g_valve.id, g_valves)
+#         with Session() as session:
+#             print(gts(session))
+#         pause.sleep(30)
 
 
 def check_time():
     while app:
-        print(datetime.now())
-        print(settings.charts)
-        print(request_pin_status())
-        pause.sleep(30)
+        ct = datetime.now()
+        if ct.minute == 16:
+            forecast_ = get_forecast(COORD)
+            if forecast_:
+                sunrise, check_t = set_sunrise()
+                print('Forecast refreshed at', check_t)
+        if settings.charts[0] + timedelta(seconds=60) > ct >= settings.charts[0]:
+            with Session() as session:
+                indx = 0
+                print(ct)
+                for ar in settings.charts[1]:
+                    print('Поливается зона: ', ar, '...')
+                    valves_ = session.query(ValveModel).filter(ValveModel.area_id == ar).all()
+                    for v in valves_:
+                        d = settings.charts[2][indx] / len(valves_)
+                        relay_status = request_pin_status()
+                        valve_on_off(session, v.relay, relay_status, d)
+                        print('Клапан', v.head, 'открыт в', datetime.now(), 'на', d, 'секунд')
+                        pause.sleep(d)
+                        relay_status = request_pin_status()
+                        if relay_status != 'ffff':
+                            valve_on_off(session, v.relay, relay_status, 0)
+                        print('Клапан', v.head, 'закрыт в', datetime.now())
+                        pause.sleep(3)
+                    indx += 1
+                settings.charts = gts(session)
+                print('Следующий полив: зона', settings.charts[1], 'в', settings.charts[0])
+        else:
+            print(ct)
+            print(settings.charts)
+            print(request_pin_status())
+            pause.sleep(30)
 
 
 def start_timer():
@@ -479,6 +509,10 @@ def start_timer():
 
 
 with Session() as session:
+    forecast = get_forecast(COORD)
+    if forecast:
+        sun, forecast_time = set_sunrise(0)
+        print('Forecast refreshed at', forecast_time)
     settings.charts = gts(session)
 
 

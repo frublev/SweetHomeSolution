@@ -67,14 +67,13 @@ def edit_unit(id_, hh, mm, unit='area'):
     url_flask = 'http://192.168.0.105:5000/irrigation/' + str(id_) + '/'
     areas = {
         'schedule': [t],
-        'duration': 300,
     }
     response = requests.patch(url_flask, json=areas, cookies={'token': cook})
     print(response.status_code)
     print(response.json())
 
 
-edit_unit(1, 16, 45, unit='area')
+edit_unit(1, 23, 30, unit='area')
 
 
 # create_scheme([[10, 45], [16, 30]])

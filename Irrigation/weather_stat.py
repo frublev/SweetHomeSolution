@@ -6,7 +6,7 @@ import requests
 
 w_path = os.path.join(os.path.dirname(__file__), 'cash/forecast.json')
 
-coord = {'latitude': 48.0353930, 'longitude': 17.2635956}
+COORD = {'latitude': 48.0353930, 'longitude': 17.2635956}
 
 
 def get_forecast(coordinates):
@@ -27,22 +27,23 @@ def get_forecast(coordinates):
                             f'wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&'
                             f'current=temperature_2m,relative_humidity_2m,rain,showers,snowfall,cloud_cover,'
                             f'surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m')
-    with open('./cash/forecast.json', 'w') as f:
+    with open(w_path, 'w') as f:
         json.dump(response.json(), f)
     return True
 
 
-def set_sunrise():
+def set_sunrise(i):
     with open(w_path) as w_file:
         weather = json.load(w_file)
-    h_m = weather['daily']['sunrise'][0][11:]
+    h_m = weather['daily']['sunrise'][i][11:]
     h = int(h_m[:2]) * 60 * 60
     m = int(h_m[3:]) * 60
     s = h + m
-    return s
+    ct = weather['current']['time']
+    return s, ct
 
 
 if __name__ == '__main__':
-    # a = get_forecast(coord)
-    sun = set_sunrise()
+    a = get_forecast(COORD)
+    sun, check_time = set_sunrise()
     print(sun)
