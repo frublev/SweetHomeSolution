@@ -32,15 +32,35 @@ def get_forecast(coordinates):
     return True
 
 
-def set_sunrise(i):
+def set_sunrise():
     with open(w_path) as w_file:
         weather = json.load(w_file)
-    h_m = weather['daily']['sunrise'][i][11:]
-    h = int(h_m[:2]) * 60 * 60
-    m = int(h_m[3:]) * 60
-    s = h + m
+    sun_rise_time = []
+    for i in weather['daily']['sunrise']:
+        h_m = i[11:]
+        h = int(h_m[:2]) * 60 * 60
+        m = int(h_m[3:]) * 60
+        s = h + m
+        sun_rise_time.append(s)
     ct = weather['current']['time']
-    return s, ct
+    return sun_rise_time, ct
+
+
+def get_weather():
+    with open(w_path) as w_file:
+        weather = json.load(w_file)
+    temperature = [str(round(weather['current']["temperature_2m"])) + '\u00A0' + '°C']
+    next_hour = datetime.now()
+    next_hour = next_hour.hour
+    temp_for = [weather['hourly']['temperature_2m'][next_hour:25], weather['hourly']['temperature_2m'][25:]]
+    for t in temp_for:
+        t.sort()
+        t_min, t_max = t[0], t[-1]
+        if t_min == t_max:
+            temperature.append(str(round(t_min)) + '\u00A0' + '°C')
+        else:
+            temperature.append(str(round(t_min)) + '...' + str(round(t_max)) + '\u00A0' + '°C')
+    return temperature
 
 
 if __name__ == '__main__':

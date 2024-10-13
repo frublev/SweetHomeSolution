@@ -170,3 +170,39 @@ class WateringModel(Base):
             'model': self.model,
             'jet': self.jet,
         }
+
+
+class AlertTypeModel(Base):
+    __tablename__ = "alerts_type"
+    id = Column(Integer, primary_key=True)
+    creation_time = Column(DateTime, server_default=func.now())
+    head = Column(String(200), nullable=False, unique=True)
+    description = Column(String(1000))
+    link = Column(String(1000))
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(UserModel, lazy='joined')
+
+    def to_dict_full(self):
+        return {
+            'creation_time': int(self.creation_time.timestamp()),
+            'id': self.id,
+            'description': self.description,
+            'user_id': self.user_id
+        }
+
+
+class AlertModel(Base):
+    __tablename__ = "alerts"
+    id = Column(Integer, primary_key=True)
+    creation_time = Column(DateTime, server_default=func.now())
+    stop_time = Column(DateTime)
+    alert_id = Column(Integer, ForeignKey('alerts_type.id'))
+    alert = relationship(AlertTypeModel, lazy='joined')
+
+    def to_dict_full(self):
+        return {
+            'creation_time': int(self.creation_time.timestamp()),
+            'stop_time': self.stop_time,
+            'id': self.id,
+            'alert_id': self.alert_id
+        }

@@ -39,8 +39,8 @@ def edit_valve(id, data_):
 
 
 def create_unit(data_, unit):
-    url_flask = 'http://192.168.0.105:5000/irrigation/' + unit + '/'
-    response = requests.post(url_flask, json=data_, cookies={'token': 'f57022f2-169f-4752-bf02-a9520f4d3009'})
+    url_flask = 'http://192.168.0.104:5000/irrigation/' + unit + '/'
+    response = requests.post(url_flask, json=data_, cookies={'token': 'ab34ef69-235c-4b5c-92d8-01fabef87a16'})
     print(response.status_code)
     print(response.json())
 
@@ -140,6 +140,7 @@ def create_sprinklers():
         create_unit(sprinklers, 'sprinklers')
 
 
-create_areas()
+# create_areas()
 # create_valves()
 # create_sprinklers()
+# login_test('frublev', '1234567', '+123456789', 'f.rublev@gmail.com')

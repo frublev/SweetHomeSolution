@@ -2,6 +2,7 @@ import time as pause
 from datetime import datetime, time, timedelta
 from threading import Thread
 
+import requests
 from flask import render_template, request, jsonify, make_response, redirect
 from flask.views import MethodView
 from flask_bcrypt import Bcrypt
@@ -12,15 +13,20 @@ from requests import get
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+
 import pydantic
 import os
 
 from dotenv import load_dotenv
 
-from .global_var import settings
-from .arduinos import request_pin_status, url_ard, valve_on_off, gts
-from .weather_stat import get_forecast, set_sunrise, COORD
-from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel
+from requests.exceptions import ConnectTimeout, ConnectionError
+from urllib3.exceptions import ProtocolError
+
+from .global_var import settings, alerts_type
+from .arduinos import url_ard, valve_on_off, gts
+from .weather_stat import get_forecast, set_sunrise, COORD, get_weather
+from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel, AlertTypeModel, \
+    AlertModel
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 print(dotenv_path)
@@ -124,8 +130,15 @@ def logout():
 @app.route('/monitor')
 def monitor():
     """Renders the home page."""
+    valves_status = request_pin_status()
+    if valves_status == 'dddd':
+        valves_status = 'No connection!'
+    else:
+        valves_status = valves_status.replace('f', 'Off-')
+        valves_status = valves_status.replace('n', 'On-')
     return render_template(
         'monitor.html',
+        valves=valves_status,
         title='Home Page',
         year=datetime.now().year,
     )
@@ -414,6 +427,14 @@ def relay_status_check():
     return jsonify(js_json)
 
 
+@app.route('/get_weather')
+def get_weather_info():
+    temperature = get_weather()
+    js_json = {'message': temperature}
+    print('weather', js_json)
+    return jsonify(js_json)
+
+
 class ValveView(MethodView):
     def post(self):
         valve_data = request.json
@@ -440,41 +461,16 @@ class SprinklerView(MethodView):
                 return jsonify(new_sprinkler.to_dict())
 
 
-# def req_test():
-#     global g_start
-#     global g_area
-#     global g_valves
-#     global g_valve
-#     global g_duration
-#     while app:
-#         if datetime.now() >= g_start:
-#             with Session() as session:
-#                 print(f'Current time: {datetime.now()}')
-#                 pin_status = request_pin_status(url_ard)
-#                 print(f'Pin status: {pin_status}')
-#                 print(f'Start time: {g_start}')
-#                 g_duration = g_area.scheme.volume / len(g_valves) / g_valve.jet * 60
-#                 print(f'Duration {g_duration}')
-#                 print(f'Starting area {g_area.id}, valve {g_valve.id}')
-#                 g_start, g_area, g_valves, g_valve, g_duration = get_start_time(
-#                     session, g_start, g_area, g_valves, g_valve, g_duration)
-#                 print(f'Next time {g_start}')
-#                 print(f'Next area {g_area.id}')
-#                 print()
-#         print(g_start, g_valve.id, g_valves)
-#         with Session() as session:
-#             print(gts(session))
-#         pause.sleep(30)
-
-
 def check_time():
+    checked = True
     while app:
         ct = datetime.now()
-        if ct.minute == 16:
-            forecast_ = get_forecast(COORD)
-            if forecast_:
-                sunrise, check_t = set_sunrise()
-                print('Forecast refreshed at', check_t)
+        if ct.minute in [1, 16, 31, 46]:
+            if checked:
+                check_forecast()
+                checked = False
+        else:
+            checked = True
         if settings.charts[0] + timedelta(seconds=60) > ct >= settings.charts[0]:
             with Session() as session:
                 indx = 0
@@ -503,19 +499,81 @@ def check_time():
             pause.sleep(30)
 
 
+def request_pin_status(url='http://192.168.0.177/'):
+    try:
+        response_ard = get(url, timeout=20)
+        if response_ard.status_code == 200:
+            response_ard = response_ard.text
+            response_ard = response_ard[:4]
+        else:
+            response_ard = 'dddd'
+    except ConnectTimeout:
+        response_ard = 'dddd'
+        print('ConnectTimeout')
+    except ConnectionError:
+        response_ard = 'dddd'
+        print('ConnectionError')
+    except ProtocolError:
+        response_ard = 'dddd'
+        print('ProtocolError')
+    if response_ard == 'dddd':
+        alert_write(1, True)
+    return response_ard
+
+
+def alert_write(alert_id, start):
+    globvar = list(settings.charts)
+    if alert_id not in globvar[3] and start:
+        globvar[3].append(alert_id)
+        settings.charts = tuple(globvar)
+        with Session() as session:
+            new_at = AlertModel()
+            new_at.alert_id = alert_id
+            new_at.user_id = 1
+            session.add(new_at)
+            session.commit()
+
+
 def start_timer():
     my_thread = Thread(target=check_time, daemon=True)
     my_thread.start()
 
 
+def check_forecast():
+    try:
+        forecast = get_forecast(COORD)
+        if forecast:
+            sun, forecast_time = set_sunrise()
+            print('Forecast refreshed at', forecast_time)
+    except requests.exceptions.ConnectionError:
+        print('Forecast was not loaded')
+
+
+def check_alerts_type():
+    with Session() as session:
+        alert_heads = []
+        alert_types = session.query(AlertTypeModel).all()
+        if alert_types:
+            for at in alert_types:
+                alert_heads.append(at.head)
+            for at in alerts_type:
+                if at['head'] not in alert_heads:
+                    new_at = AlertTypeModel(**at)
+                    new_at.user_id = 1
+                    session.add(new_at)
+                    session.commit()
+        else:
+            for at in alerts_type:
+                new_at = AlertTypeModel(**at)
+                new_at.user_id = 1
+                session.add(new_at)
+                session.commit()
+
+
+check_alerts_type()
+check_forecast()
 with Session() as session:
-    forecast = get_forecast(COORD)
-    if forecast:
-        sun, forecast_time = set_sunrise(0)
-        print('Forecast refreshed at', forecast_time)
     settings.charts = gts(session)
-
-
 start_timer()
 
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])

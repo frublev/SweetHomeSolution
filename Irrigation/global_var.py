@@ -1,6 +1,6 @@
 class GlobalVar:
     def __init__(self):
-        self._charts = {'start': 0, 'area': [], 'durations': []}
+        self._charts = {'start': 0, 'area': [], 'durations': [], 'alert': []}
 
     @property
     def charts(self):
@@ -14,3 +14,10 @@ class GlobalVar:
 
 
 settings = GlobalVar()
+
+alerts_type = [
+    {
+        'head': 'Connect error',
+        'description': 'No connection to valves'
+    }
+]

@@ -29,6 +29,17 @@
             </div>
         </div>
     </nav>
+    <div class="d-flex flex-row mb-3">
+      <div class="p-3">
+        <span class="fw-bold">Now:&nbsp;&nbsp;&nbsp; </span> <span id="weather_now">Now</span>
+      </div>
+      <div class="p-3">
+        <span class="fw-bold">Today:&nbsp;&nbsp;&nbsp; </span> <span id="weather_today">Today</span>
+      </div>
+      <div class="p-3">
+        <span class="fw-bold">Tomorrow:&nbsp;&nbsp;&nbsp; </span> <span id="weather_tomorrow">Tomorrow</span>
+      </div>
+    </div>
 
     <div class="container body-content">
         {% block content %}{% endblock %}
@@ -38,23 +49,41 @@
         </footer>
     </div>
     <script>
-      async function check_token() {
-        let response = await fetch('/check_token');
-        let token_status = await response.json();
-        let user = token_status.message;
-        if (user == 'invalid token') {
-          inner_text('Log In', '/login/');
-        } else {
-          let user_id = "/user/" + token_status.user_id + "/";
-          inner_text(user, user_id);
+      async function check_token(link, id) {
+        let response = await fetch(link);
+        let response_js = await response.json();
+        switch(link) {
+          case '/check_token':
+            let user = response_js.message;
+            if (user == 'invalid token') {
+              inner_text(id, 'Log In', '/login/');
+            } else {
+              let user_id = "/user/" + response_js.user_id + "/";
+              inner_text(id, user, user_id);
+            }
+          case '/get_weather':
+            let weather = response_js.message;
+            inner_text(id + 'now', weather[0], false);
+            inner_text(id + 'today', weather[1], false);
+            inner_text(id + 'tomorrow', weather[2], false);
         }
       }
 
-      check_token().then(inner_text(result));
+      async function wait_off() {
+        let off_wait = new Promise(function(resolve, reject) {
+          resolve(1);
+        });
+      }
 
-      function inner_text(text, href) {
-        document.getElementById('user_name').innerText = text;
-        document.getElementById('user_name').href = href;
+      check_token('/check_token', 'user_name');
+      wait_off();
+      check_token('/get_weather', 'weather_');
+
+      function inner_text(id, text, href) {
+        document.getElementById(id).innerText = text;
+        if (href) {
+          document.getElementById(id).href = href;
+        }
       }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
