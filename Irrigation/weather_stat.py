@@ -5,6 +5,7 @@ import requests
 
 
 w_path = os.path.join(os.path.dirname(__file__), 'cash/forecast.json')
+print('PATH!!!!!', w_path)
 
 COORD = {'latitude': 48.0353930, 'longitude': 17.2635956}
 
