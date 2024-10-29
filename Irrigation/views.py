@@ -429,7 +429,10 @@ def relay_status_check():
 
 @app.route('/get_weather')
 def get_weather_info():
-    temperature = get_weather()
+    try:
+        temperature = get_weather()
+    except:
+        temperature = ['No data', 'No data', 'No data']
     js_json = {'message': temperature}
     print('weather', js_json)
     return jsonify(js_json)
@@ -476,22 +479,22 @@ def check_time():
                 indx = 0
                 print(ct)
                 for ar in settings.charts[1]:
-                    print('Поливается зона: ', ar, '...')
+                    print('Area:', ar, ' is watering...')
                     valves_ = session.query(ValveModel).filter(ValveModel.area_id == ar).all()
                     for v in valves_:
                         d = settings.charts[2][indx] / len(valves_)
                         relay_status = request_pin_status()
                         valve_on_off(session, v.relay, relay_status, d)
-                        print('Клапан', v.head, 'открыт в', datetime.now(), 'на', d, 'секунд')
+                        print('Valve', v.head, 'was opened at', datetime.now(), 'for', d, 'seconds')
                         pause.sleep(d)
                         relay_status = request_pin_status()
                         if relay_status != 'ffff':
                             valve_on_off(session, v.relay, relay_status, 0)
-                        print('Клапан', v.head, 'закрыт в', datetime.now())
+                        print('Valve', v.head, 'closed at', datetime.now())
                         pause.sleep(3)
                     indx += 1
                 settings.charts = gts(session)
-                print('Следующий полив: зона', settings.charts[1], 'в', settings.charts[0])
+                print('Next watering: area', settings.charts[1], 'at', settings.charts[0])
         else:
             print(ct)
             print(settings.charts)
