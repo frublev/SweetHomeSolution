@@ -1,3 +1,5 @@
+import logging
+
 import time as pause
 from datetime import datetime, time, timedelta
 from threading import Thread
@@ -24,9 +26,15 @@ from urllib3.exceptions import ProtocolError
 
 from .global_var import settings, alerts_type
 from .arduinos import url_ard, valve_on_off, gts
+from .loggers import log_handler, get_log
 from .weather_stat import get_forecast, set_sunrise, COORD, get_weather
 from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel, AlertTypeModel, \
     AlertModel
+
+
+views_logger = logging.getLogger(__name__)
+views_logger.setLevel(logging.INFO)
+views_logger.addHandler(log_handler)
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 print(dotenv_path)
@@ -136,11 +144,13 @@ def monitor():
     else:
         valves_status = valves_status.replace('f', 'Off-')
         valves_status = valves_status.replace('n', 'On-')
+    log_layout = get_log(True)
     return render_template(
         'monitor.html',
         valves=valves_status,
         title='Home Page',
         year=datetime.now().year,
+        layout=log_layout
     )
 
 
@@ -479,11 +489,17 @@ def check_time():
                 indx = 0
                 print(ct)
                 for ar in settings.charts[1]:
-                    print('Area:', ar, ' is watering...')
+                    msg = f'Trying to start watering Area {ar}...'
+                    views_logger.info(msg)
+                    print(msg)
                     valves_ = session.query(ValveModel).filter(ValveModel.area_id == ar).all()
                     for v in valves_:
                         d = settings.charts[2][indx] / len(valves_)
                         relay_status = request_pin_status()
+                        if relay_status == 'dddd':
+                            msg = f'Can not open valve {v.head}, cause irrigation controller does not respond'
+                            views_logger.warning(msg)
+                            break
                         valve_on_off(session, v.relay, relay_status, d)
                         print('Valve', v.head, 'was opened at', datetime.now(), 'for', d, 'seconds')
                         pause.sleep(d)
@@ -578,6 +594,7 @@ check_forecast()
 with Session() as session:
     settings.charts = gts(session)
 start_timer()
+views_logger.info('Server is loaded')
 
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('view_area'), methods=['GET'])
 app.add_url_rule('/irrigation/<int:area_id>/', view_func=AreaView.as_view('edit_area'), methods=['PATCH'])  # добавить area

@@ -12,7 +12,7 @@ def arduino_test(hl):
 
 
 def login_test(user_name, password, phone_num, email):
-    url_flask = 'http://192.168.0.104:5000/create_user/'
+    url_flask = 'http://192.168.0.107:5000/create_user/'
     data_ = {
         'user_name': user_name,
         'password': password,

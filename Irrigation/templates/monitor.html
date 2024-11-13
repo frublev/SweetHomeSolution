@@ -2,8 +2,8 @@
 
 {% block content %}
 
-<div class="container-fluid text-left">
-  <div class="row">
+  <div class="container-fluid text-left">
+  <div class="row justify-content-start">
     <div class="col" style="padding: 0px;">
       <table class="table table-borderless">
         <tbody>
@@ -31,28 +31,14 @@
           <tr>
             <td class="display-6">Log</td>
           </tr>
+          {% for log in layout %}
           <tr>
-            <td>15:17</td>
-            <td> Area #1. Watering&nbsp;stopped</td>
+            <td>{{ log['log_time'] }}</td>
+            <td>{{ log['log_content'] }}</td>
           </tr>
-          <tr>
-            <td>15:01</td>
-            <td>Area #1. Watering started</td>
-          </tr>
-          <tr>
-            <td>12:32</td>
-            <td>No connection error. Solved</td>
-          </tr>
+          {% endfor %}
         </tbody>
       </table>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      1 of 2
-    </div>
-    <div class="col">
-      2 of 2
     </div>
   </div>
 </div>

@@ -1,11 +1,19 @@
+import logging
+
 from requests import get
 from datetime import datetime, time, timedelta
 from requests.exceptions import ConnectTimeout, ConnectionError
 from urllib3.exceptions import ProtocolError
 
 from Irrigation.global_var import settings
+from Irrigation.loggers import log_handler
 from Irrigation.models import WateringModel, ValveModel, AreaModel, AlertModel
 from Irrigation.weather_stat import set_sunrise
+
+
+arduinos_logger = logging.getLogger(__name__)
+arduinos_logger.setLevel(logging.INFO)
+arduinos_logger.addHandler(log_handler)
 
 url_ard = 'http://192.168.0.177/'
 
@@ -51,7 +59,11 @@ def valve_on_off(session, relay, relays_status, timer, token=None):
             session.add(new_watering)
             session.commit()
     else:
-        response = get(url_ard + f'digital_pin={pin}&pin_low')
+        try:
+            response = get(url_ard + f'digital_pin={pin}&pin_low')
+        except:
+            arduinos_logger.exception('No response')
+            response = None
     return response, start_time
 
 
@@ -75,9 +87,9 @@ def gts(session):
     start_time = None
     for ar in areas:
         if ar.auto:
-            t_delta = timedelta(seconds=set_sunrise()[0][0])
-            if dt0 + t_delta < current_datetime:
-                t_delta = timedelta(seconds=set_sunrise()[0][1])
+            dt1 = dt0 + timedelta(seconds=set_sunrise()[0][0])
+            if dt1 < current_datetime:
+                dt1 = dt0 + timedelta(seconds=set_sunrise()[0][1]) + timedelta(days=1)
             valves_ = session.query(ValveModel).filter(ValveModel.area_id == ar.id).all()
             j = 0
             for v in valves_:
@@ -88,9 +100,9 @@ def gts(session):
         else:
             t_delta = timedelta(seconds=ar.schedule[0])
             duration = ar.duration[0]
-        dt1 = dt0 + t_delta
-        if dt1 < current_datetime:
-            dt1 = dt1 + timedelta(days=1)
+            dt1 = dt0 + t_delta
+            if dt1 < current_datetime:
+                dt1 = dt1 + timedelta(days=1)
         ar_start.append({'area': ar.id, 'start_time': dt1, 'duration': duration})
         ar_start = sorted(ar_start, key=lambda x: x['start_time'])
     if ar_start[0]:
