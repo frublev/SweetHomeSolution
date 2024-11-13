@@ -1,0 +1,10 @@
+Nov 13 09:25:04 raspberrypi gunicorn[11627]:   File "/home/frublev/shs/SweetHomeSolution/Irrigation/views.py", line 563, in check_forecast
+Nov 13 09:25:04 raspberrypi gunicorn[11627]:     forecast = get_forecast(COORD)
+Nov 13 09:25:04 raspberrypi gunicorn[11627]:                ^^^^^^^^^^^^^^^^^^^
+Nov 13 09:25:04 raspberrypi gunicorn[11627]:   File "/home/frublev/shs/SweetHomeSolution/Irrigation/weather_stat.py", line 31, in get_forecast
+Nov 13 09:25:04 raspberrypi gunicorn[11627]:     with open(w_path, 'w') as f:
+Nov 13 09:25:04 raspberrypi gunicorn[11627]:          ^^^^^^^^^^^^^^^^^
+Nov 13 09:25:04 raspberrypi gunicorn[11627]: FileNotFoundError: [Errno 2] No such file or directory: '/home/frublev/shs/SweetHomeSolution/Irrigation/cash/forecast.json'
+Nov 13 09:25:04 raspberrypi gunicorn[11627]: [2024-11-13 09:25:04 +0100] [11627] [INFO] Worker exiting (pid: 11627)
+Nov 13 09:25:04 raspberrypi gunicorn[11627]: PATH!!!!!!!! /home/frublev/shs/SweetHomeSolution/Irrigation/cash/forecast.json
+Nov 13 09:25:04 raspberrypi gunicorn[11627]: /home/frublev/shs/SweetHomeSolution/Irrigation/.env
