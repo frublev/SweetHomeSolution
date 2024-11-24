@@ -26,7 +26,7 @@ from urllib3.exceptions import ProtocolError
 
 from .global_var import settings, alerts_type
 from .arduinos import url_ard, valve_on_off, gts
-from .loggers import log_handler, get_log
+from .loggers import log_handler, get_log, log_for_monitor
 from .weather_stat import get_forecast, set_sunrise, COORD, get_weather
 from .models import UserModel, Token, AreaModel, Base, SprinklerModel, ValveModel, WateringModel, AlertTypeModel, \
     AlertModel
@@ -144,11 +144,27 @@ def monitor():
     else:
         valves_status = valves_status.replace('f', 'Off-')
         valves_status = valves_status.replace('n', 'On-')
-    log_layout = get_log(True)
+    today = datetime.now().date()
+    tod_yest = (str(today), str(today - timedelta(days=1)))
+    log_layout = log_for_monitor(tod_yest)
     return render_template(
         'monitor.html',
         valves=valves_status,
         title='Home Page',
+        year=datetime.now().year,
+        layout=log_layout
+    )
+
+
+@app.route('/logs/')
+def logs():
+    current_date = datetime.now()
+    current_date = str(current_date.date())
+    print(current_date)
+    log_layout = log_for_monitor()
+    return render_template(
+        'logs.html',
+        title='Logs',
         year=datetime.now().year,
         layout=log_layout
     )

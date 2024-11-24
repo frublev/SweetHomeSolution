@@ -3,44 +3,19 @@
 {% block content %}
 
   <div class="container-fluid text-left">
-  <div class="row justify-content-start">
-    <div class="col" style="padding: 0px;">
-      <table class="table table-borderless">
-        <tbody>
-          <tr>
-            <td class="display-6">Status</td>
-          </tr>
-          <tr>
-            <td>Valves</td>
-            <td class="text-end">{{ valves }}</td>
-          </tr>
-          <tr>
-            <td>Battery</td>
-            <td class="text-end">No info</td>
-          </tr>
-          <tr>
-            <td>Garden lights</td>
-            <td class="text-end">Off</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="row justify-content-start">
+      <p class="display-6">Status</p>
+      <p>Valves:&nbsp;&nbsp;&nbsp;{{ valves }}</p>
+      <p>Battery:&nbsp;&nbsp;&nbsp;No info</p>
+      <p>Garden lights:&nbsp;&nbsp;&nbsp;Off</p>
     </div>
-    <div class="col" style="padding: 0px;">
-      <table class="table table-borderless">
-        <tbody>
-          <tr>
-            <td class="display-6">Log</td>
-          </tr>
-          {% for log in layout %}
-          <tr>
-            <td>{{ log['log_time'] }}</td>
-            <td>{{ log['log_content'] }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="row justify-content-start" style="padding: 0px;">
+        <p class="display-6">Log</p>
+        {% for log in layout %}
+        <p>{{ log['log_time'] }}&nbsp;&nbsp;&nbsp;{{ log['log_content'] }}</p>
+        {% endfor %}
+        <a href='/logs/' class="link-dark">More logs</a>
     </div>
   </div>
-</div>
 
 {% endblock %}

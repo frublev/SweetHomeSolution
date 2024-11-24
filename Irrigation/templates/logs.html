@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container-fluid text-left">
+        <div class="row justify-content-start" style="padding: 0px;">
+            <p class="display-6">Log</p>
+            {% for log in layout %}
+                {% if log['log_date'] %}
+                    <b>{{ log['log_date'] }}</b>
+                    <p></p>
+                {% else %}
+                    <p><span>{{ log['log_time'] }}</span><span style="margin-left: 20px;">{{ log['log_content'] }}</span></p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
