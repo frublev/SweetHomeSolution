@@ -85,17 +85,17 @@
               <tr>
                 <td>Start time</td>
                 <td><span id="start_time_h">{{ settings['set_start_time_h'] }}</span>:<span id="start_time_m">{{ settings['set_start_time_m'] }}</span></td>
-                <td><input id="area_schedule{{ id }}" type="range" class="form-range" min="0" max="48"></td>
+                <td><input id="area_schedule{{ id }}" type="range" name="dis" class="form-range" min="0" max="48"></td>
                 <td>
-                  <button onclick="area_status('{{ id }}', 'schedule')" class="btn btn-success">Set</button>
+                  <button onclick="area_status('{{ id }}', 'schedule')" name="dis" class="btn btn-success">Set</button>
                 </td>
               </tr>
               <tr>
                 <td>Duration</td>
                 <td><span id="duration_m">{{ settings['duration_m'] }}</span>:<span id="duration_s">{{ settings['duration_s'] }}</span></td>
-                <td><input id="area_duration{{ id }}" type="range" class="form-range" min="0" max="60"></td>
+                <td><input id="area_duration{{ id }}" type="range" name="dis" class="form-range" min="0" max="60"></td>
                 <td>
-                  <button onclick="area_status('{{ id }}', 'duration')" class="btn btn-success">Set</button>
+                  <button onclick="area_status('{{ id }}', 'duration')" name="dis" class="btn btn-success">Set</button>
                 </td>
               </tr>
             </tbody>
