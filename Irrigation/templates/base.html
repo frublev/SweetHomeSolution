@@ -31,13 +31,14 @@
     </nav>
     <div class="d-flex flex-row mb-3">
       <div class="p-3">
-        <span class="fw-bold">Now:&nbsp;&nbsp;&nbsp; </span> <span id="weather_now">Now</span>
+<!--        <span class="fw-bold">Now:&nbsp;&nbsp;&nbsp; </span> <span id="weather_now">Now</span>-->
+        <a href="#" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" id="weather_now">Now:</a>
       </div>
       <div class="p-3">
-        <span class="fw-bold">Today:&nbsp;&nbsp;&nbsp; </span> <span id="weather_today">Today</span>
+        <a href="/weather/0/" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" id="weather_today">Today:</a>
       </div>
       <div class="p-3">
-        <span class="fw-bold">Tomorrow:&nbsp;&nbsp;&nbsp; </span> <span id="weather_tomorrow">Tomorrow</span>
+        <a href="/weather/1/" class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" id="weather_tomorrow">Tomorrow:</a>
       </div>
     </div>
 
@@ -63,9 +64,9 @@
             }
           case '/get_weather':
             let weather = response_js.message;
-            inner_text(id + 'now', weather[0], false);
-            inner_text(id + 'today', weather[1], false);
-            inner_text(id + 'tomorrow', weather[2], false);
+            inner_text(id + 'now', 'Now: ' + weather[0], false);
+            inner_text(id + 'today', 'Today: '+ weather[1], false);
+            inner_text(id + 'tomorrow', 'Tomorrow: ' + weather[2], false);
         }
       }
 

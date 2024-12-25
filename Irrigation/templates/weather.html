@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h6 class="display-6">Weather {{ day }}</h6>
+<p>Actuality:&nbsp; {{ actuality }}</p>
+
+<table class="table table-borderless">
+  <thead>
+    <tr align="center">
+      <th scope="col">Time</th>
+      <th scope="col">T, &#8451;</th>
+      <th scope="col">P, mm</th>
+      <th scope="col">H, %</th>
+      <th scope="col">W, m/s</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  {% for meteo in layout %}
+    <tr>
+      <td align="center">{{ meteo['time'] }}</td>
+      <td align="center">{{ meteo['t'] }}</td>
+      <td align="center">{{ meteo['p'] }}</td>
+      <td align="center">{{ meteo['h'] }}</td>
+      <td align="center">{{ meteo['w'] }}</td>
+    </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

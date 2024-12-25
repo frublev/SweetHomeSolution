@@ -1,7 +1,7 @@
 import logging
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import requests
 
@@ -64,52 +64,73 @@ def set_sunrise():
 
 def wind_dir_str(wind_dir):
     if 22.5 <= wind_dir < 67.5:
-        w_dir_str = 'SW'
+        w_dir_str = ('SW', '\u2197')
     elif 67.5 <= wind_dir < 112.5:
-        w_dir_str = 'W'
+        w_dir_str = ('W', '\u2192')
     elif 112.5 <= wind_dir < 157.5:
-        w_dir_str = 'NW'
+        w_dir_str = ('NW', '\u2198')
     elif 157.5 <= wind_dir < 202.5:
-        w_dir_str = 'N'
+        w_dir_str = ('N', '\u2193')
     elif 202.5 <= wind_dir < 247.5:
-        w_dir_str = 'NE'
+        w_dir_str = ('NE', '\u2199')
     elif 247.5 <= wind_dir < 292.5:
-        w_dir_str = 'E'
+        w_dir_str = ('E', '\u2190')
     elif 292.5 <= wind_dir < 337.5:
-        w_dir_str = 'SE'
+        w_dir_str = ('SE', '\u2196')
     else:
-        w_dir_str = 'S'
+        w_dir_str = ('S', '\u2191')
     return w_dir_str
 
 
-def get_weather(t='base'):
+def get_weather(t=100):
     with open(w_path) as w_file:
         weather = json.load(w_file)
-    next_hour = datetime.now()
-    next_hour = next_hour.hour
-    if t == 'base':
-        temperature = [str(round(weather['current']["temperature_2m"])) + '\u00A0' + '°C']
+    actuality = weather['current']["time"].replace("T", " ")
+    ct = datetime.now()
+    next_hour = ct.hour
+    weather_data = []
+    if t == 100:
+        weather_data = [str(round(weather['current']["temperature_2m"])) + '\u00A0' + '°C']
+        day = 'today'
         temp_for = [weather['hourly']['temperature_2m'][next_hour:25], weather['hourly']['temperature_2m'][25:]]
         for t in temp_for:
             t.sort()
             t_min, t_max = t[0], t[-1]
             if t_min == t_max:
-                temperature.append(str(round(t_min)) + '\u00A0' + '°C')
+                weather_data.append(str(round(t_min)) + '\u00A0' + '°C')
             else:
-                temperature.append(str(round(t_min)) + '...' + str(round(t_max)) + '\u00A0' + '°C')
-        return temperature
-    elif t == 'now':
+                weather_data.append(str(round(t_min)) + '...' + str(round(t_max)) + '\u00A0' + '°C')
+    elif t == 101:
+        day = 'now'
         wind = wind_dir_str(weather['current']["wind_direction_10m"])
         weather_data = {'time': weather['current']['time'][-5:],
                         'temperature': str(weather['current']["temperature_2m"]) + " \u00b0C",
                         'humidity': str(weather['current']["relative_humidity_2m"]) + " %",
                         'surface_pressure': str(weather['current']["surface_pressure"]) + 'hPa',
                         'wind': str(wind)}
-        return weather_data
+    else:
+        wind = wind_dir_str(weather['current']["wind_direction_10m"])
+        if t == 0:
+            day = 'today'
+        elif t == 1:
+            day = 'tomorrow'
+        else:
+            day = ct.date() + timedelta(days=t)
+        hours = t * 24
+        for h in range(hours, hours + 24):
+            if t < 2:
+                weather_data.append({
+                    'time': weather['hourly']['time'][h][-5:],
+                    't': weather['hourly']['temperature_2m'][h],
+                    'p': weather['hourly']['precipitation'][h],
+                    'h': weather['hourly']['relativehumidity_2m'][h],
+                    'w': wind[1] + ' ' + str(round(weather['hourly']['windspeed_10m'][h], 1)),
+                    })
+    return weather_data, day, actuality
 
 
 if __name__ == '__main__':
     a = get_forecast(COORD)
     # sun, check_time = set_sunrise()
-    b = get_weather('now')
-    print(b)
+    a, b, c = get_weather(2)
+    print(b, c, a)

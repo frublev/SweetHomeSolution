@@ -456,11 +456,10 @@ def relay_status_check():
 @app.route('/get_weather')
 def get_weather_info():
     try:
-        temperature = get_weather()
+        temperature, a, b = get_weather()
     except:
         temperature = ['No data', 'No data', 'No data']
     js_json = {'message': temperature}
-    print('weather', js_json)
     return jsonify(js_json)
 
 
@@ -488,6 +487,18 @@ class SprinklerView(MethodView):
                 session.add(new_sprinkler)
                 session.commit()
                 return jsonify(new_sprinkler.to_dict())
+
+
+class WeatherView(MethodView):
+    def get(self, day_plus: int):
+        layout, day, actuality = get_weather(day_plus)
+        return render_template(
+            'weather.html',
+            layout=layout,
+            day=day,
+            actuality=actuality,
+            year=datetime.now().year
+        )
 
 
 def check_time():
@@ -622,3 +633,4 @@ app.add_url_rule('/login/', view_func=Login.as_view('show_login_form'), methods=
 app.add_url_rule('/login/', view_func=Login.as_view('login'), methods=['POST'])
 app.add_url_rule('/welcome/', view_func=WelcomeView.as_view('show_welcome'), methods=['GET'])
 app.add_url_rule('/user/<int:user_id>/', view_func=UserView.as_view('get_user'), methods=['GET'])
+app.add_url_rule('/weather/<int:day_plus>/', view_func=WeatherView.as_view('view_weather'), methods=['GET'])
