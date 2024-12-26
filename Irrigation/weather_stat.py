@@ -95,12 +95,20 @@ def get_weather_icon(cloudcover, precipitation, night=True):
             cloud_icon = '\N{CRESCENT MOON}'
     elif 10 <= cloudcover < 30:
         cloud_icon = '\N{WHITE SUN WITH SMALL CLOUD}'
+        if night:
+            cloud_icon = '\u2601'
         if precipitation > 0.3:
             cloud_icon = '\N{WHITE SUN BEHIND CLOUD WITH RAIN}'
+            if night:
+                cloud_icon = '\N{CLOUD WITH RAIN}'
     elif 30 <= cloudcover < 70:
         cloud_icon = '\N{WHITE SUN BEHIND CLOUD}'
+        if night:
+            cloud_icon = '\u2601'
         if precipitation > 0.3:
             cloud_icon = '\N{WHITE SUN BEHIND CLOUD WITH RAIN}'
+            if night:
+                cloud_icon = '\N{CLOUD WITH RAIN}'
     else:
         cloud_icon = '\u2601'
         if precipitation > 0.3:
