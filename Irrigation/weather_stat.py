@@ -118,58 +118,63 @@ def get_weather_icon(cloudcover, precipitation, night=True):
 
 def get_weather(t=100):
     with open(w_path) as w_file:
-        weather = json.load(w_file)
-    actuality = weather['current']["time"].replace("T", " ")
-    ct = datetime.now()
-    next_hour = ct.hour
-    weather_data = []
-    if t == 100:
-        weather_data = [str(round(weather['current']["temperature_2m"])) + '\u00A0' + '°C']
-        day = 'today'
-        temp_for = [weather['hourly']['temperature_2m'][next_hour:25], weather['hourly']['temperature_2m'][25:]]
-        for t in temp_for:
-            t.sort()
-            t_min, t_max = t[0], t[-1]
-            if t_min == t_max:
-                weather_data.append(str(round(t_min)) + '\u00A0' + '°C')
-            else:
-                weather_data.append(str(round(t_min)) + '...' + str(round(t_max)) + '\u00A0' + '°C')
-    elif t == 101:
-        day = 'now'
-        wind = wind_dir_str(weather['current']["wind_direction_10m"])
-        weather_data = {'time': weather['current']['time'][-5:],
-                        'temperature': str(weather['current']["temperature_2m"]) + " \u00b0C",
-                        'humidity': str(weather['current']["relative_humidity_2m"]) + " %",
-                        'surface_pressure': str(weather['current']["surface_pressure"]) + 'hPa',
-                        'wind': str(wind)}
-    else:
-        if t == 0:
+        try:
+            weather = json.load(w_file)
+        except:
+            msg = f'Error in json-file'
+            weather_logger.error(msg)
+    if weather:
+        actuality = weather['current']["time"].replace("T", " ")
+        ct = datetime.now()
+        next_hour = ct.hour
+        weather_data = []
+        if t == 100:
+            weather_data = [str(round(weather['current']["temperature_2m"])) + '\u00A0' + '°C']
             day = 'today'
-        elif t == 1:
-            day = 'tomorrow'
-        else:
-            day = ct.date() + timedelta(days=t)
-        hours = t * 24
-        for h in range(hours, hours + 24):
-            if t < 2:
-                if to_second(weather['daily']['sunrise'][t]) <= to_second(weather['hourly']['time'][h]) < to_second(
-                        weather['daily']['sunset'][t]):
-                    night = False
+            temp_for = [weather['hourly']['temperature_2m'][next_hour:25], weather['hourly']['temperature_2m'][25:]]
+            for t in temp_for:
+                t.sort()
+                t_min, t_max = t[0], t[-1]
+                if t_min == t_max:
+                    weather_data.append(str(round(t_min)) + '\u00A0' + '°C')
                 else:
-                    night = True
-                wind = wind_dir_str(weather['hourly']["winddirection_10m"][h])
-                weather_data.append({
-                    'time': weather['hourly']['time'][h][-5:],
-                    't': weather['hourly']['temperature_2m'][h],
-                    'p': get_weather_icon(
-                        weather['hourly']['cloudcover'][h],
-                        weather['hourly']['precipitation'][h],
-                        night
-                    ) + ' ' + str(weather['hourly']['precipitation'][h]),
-                    'h': weather['hourly']['relativehumidity_2m'][h],
-                    'w': wind[1] + ' ' + str(round(weather['hourly']['windspeed_10m'][h], 1)),
-                    })
-    return weather_data, day, actuality
+                    weather_data.append(str(round(t_min)) + '...' + str(round(t_max)) + '\u00A0' + '°C')
+        elif t == 101:
+            day = 'now'
+            wind = wind_dir_str(weather['current']["wind_direction_10m"])
+            weather_data = {'time': weather['current']['time'][-5:],
+                            'temperature': str(weather['current']["temperature_2m"]) + " \u00b0C",
+                            'humidity': str(weather['current']["relative_humidity_2m"]) + " %",
+                            'surface_pressure': str(weather['current']["surface_pressure"]) + 'hPa',
+                            'wind': str(wind)}
+        else:
+            if t == 0:
+                day = 'today'
+            elif t == 1:
+                day = 'tomorrow'
+            else:
+                day = ct.date() + timedelta(days=t)
+            hours = t * 24
+            for h in range(hours, hours + 24):
+                if t < 2:
+                    if to_second(weather['daily']['sunrise'][t]) <= to_second(weather['hourly']['time'][h]) < to_second(
+                            weather['daily']['sunset'][t]):
+                        night = False
+                    else:
+                        night = True
+                    wind = wind_dir_str(weather['hourly']["winddirection_10m"][h])
+                    weather_data.append({
+                        'time': weather['hourly']['time'][h][-5:],
+                        't': weather['hourly']['temperature_2m'][h],
+                        'p': get_weather_icon(
+                            weather['hourly']['cloudcover'][h],
+                            weather['hourly']['precipitation'][h],
+                            night
+                        ) + ' ' + str(weather['hourly']['precipitation'][h]),
+                        'h': weather['hourly']['relativehumidity_2m'][h],
+                        'w': wind[1] + ' ' + str(round(weather['hourly']['windspeed_10m'][h], 1)),
+                        })
+        return weather_data, day, actuality
 
 
 if __name__ == '__main__':
