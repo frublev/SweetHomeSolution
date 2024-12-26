@@ -65,6 +65,11 @@ const area_status = async (area_ = '', radio = '') => {
     body: JSON.stringify(data)
   });
   let area_status = await response.json();
+
+  if (radio == "schedule") {
+    document.getElementById("next_start").innerText = area_status["next_start"];
+  }
+
   let el_id_ = 'area_auto' + area_;
   if (typeof area_status[radio] == "boolean" && area_status[radio] == true) {
     document.getElementById(area_id).value = "True";

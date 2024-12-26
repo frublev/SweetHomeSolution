@@ -150,6 +150,7 @@ def monitor():
     return render_template(
         'monitor.html',
         valves=valves_status,
+        next_start=settings.charts[0].strftime('%d %b %H:%M'),
         title='Home Page',
         year=datetime.now().year,
         layout=log_layout
@@ -306,6 +307,15 @@ class UserView(MethodView):
                 return jsonify({'error': f'Username {user_name} already exists'})
 
 
+def next_start_str(seconds):
+    current_date = datetime.now().date()
+    next_start = datetime.combine(current_date, time(0, 0)) + timedelta(seconds=seconds)
+    if next_start < datetime.now():
+        next_start = next_start + timedelta(days=1)
+    next_start = next_start.strftime('%d %b %H:%M')
+    return next_start
+
+
 class AreaView(MethodView):
     def get(self, area_id: int):
         with Session() as session:
@@ -323,14 +333,14 @@ class AreaView(MethodView):
                     'Sprinklers quantity': sprinklers
                 }
                 try:
-                    settings = {
+                    settings_ = {
                         'set_start_time_h': (area.schedule[0] / 1800) // 2,
                         'set_start_time_m': (area.schedule[0] / 1800) % 2 * 30,
                         'duration_m': (area.duration[0] / 30) // 60,
                         'duration_s': (area.duration[0] / 30) % 60 * 30
                     }
                 except TypeError:
-                    settings = {
+                    settings_ = {
                         'set_start_time_h': 24,
                         'set_start_time_m': 0,
                         'duration_m': 0,
@@ -365,7 +375,10 @@ class AreaView(MethodView):
                     valves.append(valve)
                     valves_str += str(valve['relay']) + ';'
 
-                a = settings.charts[0]
+                if area.auto:
+                    next_start = settings.charts[0].strftime('%d %b %I:%M')
+                else:
+                    next_start = next_start_str(area.schedule[0])
 
                 response = make_response(render_template('irrigation_area.html',
                                                          id=area.id,
@@ -374,14 +387,14 @@ class AreaView(MethodView):
                                                          on_off=area.on_off,
                                                          active_class=active_class,
                                                          description=description,
-                                                         settings=settings,
+                                                         settings=settings_,
                                                          valves=valves,
                                                          valves_str=valves_str,
                                                          active_valve=active_valve,
                                                          rs=relays_status,
                                                          start_time=start_time,
                                                          year=datetime.now().year,
-                                                         next_start=a
+                                                         next_start=next_start
                                                          ))
                 return response
 
@@ -409,8 +422,10 @@ class AreaView(MethodView):
                 session.query(AreaModel).filter(AreaModel.id == area_id).update(area_data)
                 session.commit()
                 upd_area = session.query(AreaModel).get(area_id)
+                upd_area = upd_area.to_dict()
+                upd_area['next_start'] = next_start_str(upd_area['schedule'][0])
                 settings.charts = gts(session)
-                return jsonify(upd_area.to_dict())
+                return jsonify(upd_area)
 
 
 @app.route('/valve_manual', methods=['POST'])

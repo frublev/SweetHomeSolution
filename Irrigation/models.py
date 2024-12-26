@@ -74,6 +74,7 @@ class AreaModel(Base):
             'on_off': self.on_off,
             'id': self.id,
             'user_id': self.user_id,
+            'schedule': self.schedule
         }
 
 
