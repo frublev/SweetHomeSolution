@@ -588,7 +588,7 @@ def start_timer():
 def check_forecast():
     try:
         forecast = get_forecast(COORD)
-        if forecast:
+        if forecast == 200:
             sun, forecast_time = set_sunrise()
             print('Forecast refreshed at', forecast_time)
     except requests.exceptions.ConnectionError:

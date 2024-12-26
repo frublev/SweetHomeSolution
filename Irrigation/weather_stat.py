@@ -35,17 +35,18 @@ def get_forecast(coordinates):
                             f'wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&'
                             f'current=temperature_2m,relative_humidity_2m,rain,showers,snowfall,cloud_cover,'
                             f'surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m')
+    status = response.status_code
     if response:
         with open(w_path, 'w') as f:
             try:
                 json.dump(response.json(), f)
             except requests.exceptions.JSONDecodeError:
-                msg = 'Error dumping to json'
+                msg = f'Error dumping to json. Status code {status}'
                 weather_logger.error(msg)
     else:
-        msg = 'Weather forecast is empty'
+        msg = f'Weather forecast is empty. Status code {status}'
         weather_logger.error(msg)
-    return True
+    return status
 
 
 def set_sunrise():
@@ -82,6 +83,25 @@ def wind_dir_str(wind_dir):
     return w_dir_str
 
 
+def get_weather_icon(cloudcover, precipitation):
+    if 90 <= cloudcover:
+        cloud_icon = '\u263C'
+    elif 66.6 <= cloudcover < 90:
+        cloud_icon = '\N{WHITE SUN WITH SMALL CLOUD}'
+        if precipitation > 0.3:
+            cloud_icon = '\N{WHITE SUN BEHIND CLOUD WITH RAIN}'
+    elif 10 <= cloudcover < 66.6:
+        cloud_icon = '\N{WHITE SUN BEHIND CLOUD}'
+        if precipitation > 0.3:
+            cloud_icon = '\N{WHITE SUN BEHIND CLOUD WITH RAIN}'
+    else:
+        cloud_icon = '\u2601'
+        if precipitation > 0.3:
+            cloud_icon = '\N{CLOUD WITH RAIN}'
+    return cloud_icon
+
+
+
 def get_weather(t=100):
     with open(w_path) as w_file:
         weather = json.load(w_file)
@@ -109,7 +129,6 @@ def get_weather(t=100):
                         'surface_pressure': str(weather['current']["surface_pressure"]) + 'hPa',
                         'wind': str(wind)}
     else:
-        wind = wind_dir_str(weather['current']["wind_direction_10m"])
         if t == 0:
             day = 'today'
         elif t == 1:
@@ -119,10 +138,14 @@ def get_weather(t=100):
         hours = t * 24
         for h in range(hours, hours + 24):
             if t < 2:
+                wind = wind_dir_str(weather['hourly']["winddirection_10m"][h])
                 weather_data.append({
                     'time': weather['hourly']['time'][h][-5:],
                     't': weather['hourly']['temperature_2m'][h],
-                    'p': weather['hourly']['precipitation'][h],
+                    'p': get_weather_icon(
+                        weather['hourly']['cloudcover'][h],
+                        weather['hourly']['precipitation'][h]
+                    ) + ' ' + str(weather['hourly']['precipitation'][h]),
                     'h': weather['hourly']['relativehumidity_2m'][h],
                     'w': wind[1] + ' ' + str(round(weather['hourly']['windspeed_10m'][h], 1)),
                     })
