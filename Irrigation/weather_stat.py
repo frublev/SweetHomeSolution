@@ -43,9 +43,11 @@ def get_forecast(coordinates):
             except requests.exceptions.JSONDecodeError:
                 msg = f'Error dumping to json. Status code {status}'
                 weather_logger.error(msg)
+                weather_logger.exception(msg)
     else:
         msg = f'Weather forecast is empty. Status code {status}'
         weather_logger.error(msg)
+        weather_logger.exception(msg)
     return status
 
 
@@ -123,6 +125,7 @@ def get_weather(t=100):
         except:
             msg = f'Error in json-file'
             weather_logger.error(msg)
+            weather_logger.exception(msg)
     if weather:
         actuality = weather['current']["time"].replace("T", " ")
         ct = datetime.now()

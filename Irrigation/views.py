@@ -365,6 +365,8 @@ class AreaView(MethodView):
                     valves.append(valve)
                     valves_str += str(valve['relay']) + ';'
 
+                a = settings.charts[0]
+
                 response = make_response(render_template('irrigation_area.html',
                                                          id=area.id,
                                                          head=area.head,
@@ -379,6 +381,7 @@ class AreaView(MethodView):
                                                          rs=relays_status,
                                                          start_time=start_time,
                                                          year=datetime.now().year,
+                                                         next_start=a
                                                          ))
                 return response
 
