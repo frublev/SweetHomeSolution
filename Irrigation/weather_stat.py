@@ -49,15 +49,20 @@ def get_forecast(coordinates):
     return status
 
 
+def to_second(full_date):
+    h_m = full_date[11:]
+    h = int(h_m[:2]) * 60 * 60
+    m = int(h_m[3:]) * 60
+    s = h + m
+    return s
+
+
 def set_sunrise():
     with open(w_path) as w_file:
         weather = json.load(w_file)
     sun_rise_time = []
     for i in weather['daily']['sunrise']:
-        h_m = i[11:]
-        h = int(h_m[:2]) * 60 * 60
-        m = int(h_m[3:]) * 60
-        s = h + m
+        s = to_second(i)
         sun_rise_time.append(s)
     ct = weather['current']['time']
     return sun_rise_time, ct
@@ -83,14 +88,16 @@ def wind_dir_str(wind_dir):
     return w_dir_str
 
 
-def get_weather_icon(cloudcover, precipitation):
-    if 90 <= cloudcover:
-        cloud_icon = '\u263C'
-    elif 66.6 <= cloudcover < 90:
+def get_weather_icon(cloudcover, precipitation, night=True):
+    if cloudcover < 10:
+        cloud_icon = '\u2600'
+        if night:
+            cloud_icon = '\N{CRESCENT MOON}'
+    elif 10 <= cloudcover < 30:
         cloud_icon = '\N{WHITE SUN WITH SMALL CLOUD}'
         if precipitation > 0.3:
             cloud_icon = '\N{WHITE SUN BEHIND CLOUD WITH RAIN}'
-    elif 10 <= cloudcover < 66.6:
+    elif 30 <= cloudcover < 70:
         cloud_icon = '\N{WHITE SUN BEHIND CLOUD}'
         if precipitation > 0.3:
             cloud_icon = '\N{WHITE SUN BEHIND CLOUD WITH RAIN}'
@@ -99,7 +106,6 @@ def get_weather_icon(cloudcover, precipitation):
         if precipitation > 0.3:
             cloud_icon = '\N{CLOUD WITH RAIN}'
     return cloud_icon
-
 
 
 def get_weather(t=100):
@@ -138,13 +144,19 @@ def get_weather(t=100):
         hours = t * 24
         for h in range(hours, hours + 24):
             if t < 2:
+                if to_second(weather['daily']['sunrise'][t]) <= to_second(weather['hourly']['time'][h]) < to_second(
+                        weather['daily']['sunset'][t]):
+                    night = False
+                else:
+                    night = True
                 wind = wind_dir_str(weather['hourly']["winddirection_10m"][h])
                 weather_data.append({
                     'time': weather['hourly']['time'][h][-5:],
                     't': weather['hourly']['temperature_2m'][h],
                     'p': get_weather_icon(
                         weather['hourly']['cloudcover'][h],
-                        weather['hourly']['precipitation'][h]
+                        weather['hourly']['precipitation'][h],
+                        night
                     ) + ' ' + str(weather['hourly']['precipitation'][h]),
                     'h': weather['hourly']['relativehumidity_2m'][h],
                     'w': wind[1] + ' ' + str(round(weather['hourly']['windspeed_10m'][h], 1)),
