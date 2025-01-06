@@ -8,3 +8,5 @@ meteostat~=1.6.7
 flask-bcrypt
 sqlalchemy-utils
 psycopg2
+greenlet~=3.0.3
+opencv-python~=4.10.0.84

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>{{ title }}.</h2>
+<h3>{{ message }}</h3>
+
+<html>
+  <body>
+    <img src="{{ url_for('video_feed') }}" class="img-fluid">
+  </body>
+</html>
+
+{% endblock %}

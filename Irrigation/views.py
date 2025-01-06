@@ -1,11 +1,13 @@
 import logging
 
+from importlib import import_module
+
 import time as pause
 from datetime import datetime, time, timedelta
 from threading import Thread
 
 import requests
-from flask import render_template, request, jsonify, make_response, redirect
+from flask import render_template, request, jsonify, make_response, redirect, Response
 from flask.views import MethodView
 from flask_bcrypt import Bcrypt
 
@@ -41,6 +43,11 @@ print(dotenv_path)
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
+if os.getenv('CAMERA') == 'camera_opencv':
+    from .camera_opencv import Camera
+else:
+    from .camera import Camera
+
 bcrypt = Bcrypt(app)
 PG_DSN = os.getenv('PG_DSN')
 cook = os.getenv('COOK')
@@ -49,11 +56,7 @@ Session = sessionmaker(bind=engine)
 
 Base.metadata.create_all(engine)
 
-g_start = datetime(2021, 1, 1)
-g_area = None
-g_valves = ()
-g_valve = 0
-g_duration = 0
+global_status = None
 
 
 class CreateUserValidation(pydantic.BaseModel):
@@ -138,9 +141,14 @@ def logout():
 @app.route('/monitor')
 def monitor():
     """Renders the home page."""
-    valves_status = request_pin_status()
+    global global_status
+    if global_status:
+        valves_status = request_pin_status()
+    else:
+        valves_status = 'dddd'
     if valves_status == 'dddd':
         valves_status = 'No connection!'
+        global_status = None
     else:
         valves_status = valves_status.replace('f', 'Off-')
         valves_status = valves_status.replace('n', 'On-')
@@ -223,11 +231,25 @@ class WelcomeView(MethodView):
 def contact():
     """Renders the contact page."""
     return render_template(
-        'contact.html',
-        title='Contact',
+        'camera.html',
+        title='Cam #1',
         year=datetime.now().year,
-        message='Your contact page.'
+        message='Watching area #1'
     )
+
+
+def gen(camera):
+    """Video streaming generator function."""
+    yield b'--frame\r\n'
+    while True:
+        frame = camera.get_frame()
+        yield b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n--frame\r\n'
+
+
+@app.route('/video_feed')
+def video_feed():
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    return Response(gen(Camera()), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/irrigation_old', methods=['GET', 'POST'])
@@ -347,7 +369,11 @@ class AreaView(MethodView):
                         'duration_s': 0
                     }
 
-                relays_status = request_pin_status(url_ard)
+                global global_status
+                if global_status:
+                    relays_status = request_pin_status(url_ard)
+                else:
+                    relays_status = 'dddd'
                 print(relays_status)
                 valves = []
                 valves_str = ''
